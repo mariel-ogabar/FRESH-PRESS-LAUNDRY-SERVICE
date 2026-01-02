@@ -31,25 +31,25 @@ class DatabaseSeeder extends Seeder
         MainService::create([
             'service_name' => 'Dry Cleaning',
             'pricing_type' => 'PER_ITEM',
-            'service_base_price' => 350.00, // Matches your card
+            'service_base_price' => 350.00, 
             'is_active' => true
         ]);
 
         MainService::create([
             'service_name' => 'Ironing Service',
             'pricing_type' => 'PER_KG',
-            'service_base_price' => 120.00, // Matches your card
+            'service_base_price' => 120.00,
             'is_active' => true
         ]);
 
         MainService::create([
             'service_name' => 'Stain Removal Treatment',
             'pricing_type' => 'PER_ITEM',
-            'service_base_price' => 200.00, // Matches your card
+            'service_base_price' => 200.00, 
             'is_active' => true
         ]);
 
-        // --- ADD-ONS (From your UI) ---
+        // --- ADD-ONS ---
         AddOn::create([
             'addon_name' => 'Express Service',
             'addon_price' => 250.00,
