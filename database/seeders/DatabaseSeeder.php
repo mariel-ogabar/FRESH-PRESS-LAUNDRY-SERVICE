@@ -20,11 +20,11 @@ class DatabaseSeeder extends Seeder
             'role' => 'CUSTOMER',
         ]);
 
-        // --- MAIN SERVICES (From your UI) ---
+        // --- MAIN SERVICES  ---
         MainService::create([
             'service_name' => 'Basic Wash & Fold',
             'pricing_type' => 'PER_KG',
-            'service_base_price' => 150.00, // Matches your card
+            'service_base_price' => 150.00, 
             'is_active' => true
         ]);
 
