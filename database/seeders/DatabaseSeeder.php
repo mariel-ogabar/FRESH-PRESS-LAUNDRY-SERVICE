@@ -2,24 +2,66 @@
 
 namespace Database\Seeders;
 
-use App\Models\User;
-use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
+use App\Models\User;
+use App\Models\MainService;
+use App\Models\AddOn;
+use Illuminate\Support\Facades\Hash;
 
 class DatabaseSeeder extends Seeder
 {
-    use WithoutModelEvents;
-
-    /**
-     * Seed the application's database.
-     */
     public function run(): void
     {
-        // User::factory(10)->create();
+        // Create a test Customer
+        User::create([
+            'name' => 'Test Customer',
+            'email' => 'customer@freshpress.com',
+            'password' => Hash::make('password'),
+            'role' => 'CUSTOMER',
+        ]);
 
-        User::factory()->create([
-            'name' => 'Test User',
-            'email' => 'test@example.com',
+        // --- MAIN SERVICES (From your UI) ---
+        MainService::create([
+            'service_name' => 'Basic Wash & Fold',
+            'pricing_type' => 'PER_KG',
+            'service_base_price' => 150.00, // Matches your card
+            'is_active' => true
+        ]);
+
+        MainService::create([
+            'service_name' => 'Dry Cleaning',
+            'pricing_type' => 'PER_ITEM',
+            'service_base_price' => 350.00, // Matches your card
+            'is_active' => true
+        ]);
+
+        MainService::create([
+            'service_name' => 'Ironing Service',
+            'pricing_type' => 'PER_KG',
+            'service_base_price' => 120.00, // Matches your card
+            'is_active' => true
+        ]);
+
+        MainService::create([
+            'service_name' => 'Stain Removal Treatment',
+            'pricing_type' => 'PER_ITEM',
+            'service_base_price' => 200.00, // Matches your card
+            'is_active' => true
+        ]);
+
+        // --- ADD-ONS (From your UI) ---
+        AddOn::create([
+            'addon_name' => 'Express Service',
+            'addon_price' => 250.00,
+            'multiple_allowed' => false,
+            'is_active' => true
+        ]);
+
+        AddOn::create([
+            'addon_name' => 'Delicate Care',
+            'addon_price' => 300.00,
+            'multiple_allowed' => false,
+            'is_active' => true
         ]);
     }
 }
