@@ -8,10 +8,7 @@
     "require": {
         "php": "^8.2",
         "laravel/framework": "^12.0",
-<<<<<<< HEAD
         "laravel/sanctum": "^4.0",
-=======
->>>>>>> 797e9d73c702be25a2d928e5c85425629dce4360
         "laravel/tinker": "^2.10.1"
     },
     "require-dev": {
