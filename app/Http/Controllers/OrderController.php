@@ -132,8 +132,6 @@ class OrderController extends Controller
         $order = Order::findOrFail($id);
 
         // 2. Perform the delete
-        // Because of 'onDelete("cascade")' in your migrations, 
-        // related payments, statuses, and items are deleted automatically.
         $order->delete();
 
         return response()->json([
