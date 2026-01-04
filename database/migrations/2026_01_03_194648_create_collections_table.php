@@ -13,6 +13,10 @@ return new class extends Migration
     {
         Schema::create('collections', function (Blueprint $table) {
             $table->id();
+            $table->foreignId('order_id')->constrained()->cascadeOnDelete();
+            $table->enum('collection_method', ['DROP_OFF','STAFF_PICKUP']);
+            $table->enum('collection_status', ['PENDING','RECEIVED'])->default('PENDING');
+            $table->dateTime('collection_date')->nullable();
             $table->timestamps();
         });
     }

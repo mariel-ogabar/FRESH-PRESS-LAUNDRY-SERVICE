@@ -13,6 +13,10 @@ return new class extends Migration
     {
         Schema::create('laundry_statuses', function (Blueprint $table) {
             $table->id();
+            $table->foreignId('order_id')->constrained('orders')->cascadeOnDelete();
+            $table->enum('current_status', [
+                'PENDING','WASHING','DRYING','FOLDING','IRONING','READY'
+            ])->default('PENDING');
             $table->timestamps();
         });
     }

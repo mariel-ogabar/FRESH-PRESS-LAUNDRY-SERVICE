@@ -13,6 +13,10 @@ return new class extends Migration
     {
         Schema::create('add_ons', function (Blueprint $table) {
             $table->id();
+            $table->string('addon_name');
+            $table->decimal('addon_price', 10, 2);
+            $table->boolean('multiple_allowed')->default(false);
+            $table->boolean('is_active')->default(true);
             $table->timestamps();
         });
     }

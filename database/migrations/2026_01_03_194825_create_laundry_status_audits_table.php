@@ -13,7 +13,10 @@ return new class extends Migration
     {
         Schema::create('laundry_status_audits', function (Blueprint $table) {
             $table->id();
-            $table->timestamps();
+            $table->foreignId('order_id')->constrained('orders')->onDelete('cascade');
+            $table->string('old_status')->nullable();
+            $table->string('new_status');
+            $table->timestamp('changed_at')->useCurrent();
         });
     }
 

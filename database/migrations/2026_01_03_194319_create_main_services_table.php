@@ -13,6 +13,10 @@ return new class extends Migration
     {
         Schema::create('main_services', function (Blueprint $table) {
             $table->id();
+            $table->string('service_name');
+            $table->enum('pricing_type', ['PER_KG','PER_ITEM']);
+            $table->decimal('service_base_price', 10, 2);
+            $table->boolean('is_active')->default(true);
             $table->timestamps();
         });
     }

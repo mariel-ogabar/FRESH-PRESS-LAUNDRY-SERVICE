@@ -13,6 +13,10 @@ return new class extends Migration
     {
         Schema::create('deliveries', function (Blueprint $table) {
             $table->id();
+            $table->foreignId('order_id')->constrained()->cascadeOnDelete();
+            $table->enum('delivery_method', ['STORE_PICKUP','DELIVERY']);
+            $table->enum('delivery_status', ['READY','DELIVERED'])->default('READY');
+            $table->dateTime('delivery_date')->nullable();
             $table->timestamps();
         });
     }
