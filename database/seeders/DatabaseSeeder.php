@@ -28,6 +28,15 @@ class DatabaseSeeder extends Seeder
             'role' => 'CUSTOMER',
         ]);
 
+        // 2. STAFF
+        User::create([
+            'name' => 'Staff',
+            'email' => 'staffr@freshpress.com',
+            'password' => Hash::make('password'),
+            'role' => 'STAFF',
+        ]);
+
+
         // 3. Services
         MainService::create([
             'service_name' => 'Basic Wash & Fold',
@@ -43,6 +52,14 @@ class DatabaseSeeder extends Seeder
             'is_active' => true
         ]);
 
+        MainService::create([
+            'service_name' => 'Stain Removal Treatment',
+            'pricing_type' => 'PER_ITEM',
+            'service_base_price' => 200.00,
+            'is_active' => true
+        ]);
+
+
         // 4. Add-Ons
         AddOn::create([
             'addon_name' => 'Express Service',
@@ -50,5 +67,21 @@ class DatabaseSeeder extends Seeder
             'multiple_allowed' => false,
             'is_active' => true
         ]);
+
+        AddOn::create([
+            'addon_name' => 'Delicate Care',
+            'addon_price' => 300.00,
+            'multiple_allowed' => false,
+            'is_active' => true
+        ]);
+
+        AddOn::create([
+            'addon_name' => 'Ironing Service',
+            'addon_price' => 120.00,
+            'multiple_allowed' => false,
+            'is_active' => true
+        ]);
+
+
     }
 }
