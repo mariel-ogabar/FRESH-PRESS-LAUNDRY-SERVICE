@@ -1,5 +1,6 @@
 <?php
 
+
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
@@ -59,7 +60,8 @@ return new class extends Migration {
                 o.total_price, 
                 o.order_status, 
                 ls.current_status AS laundry_stage,
-                p.payment_status
+                p.payment_status,
+                o.created_at -- Idagdag ito para sa sorting sa UI
             FROM orders o
             JOIN users u ON o.user_id = u.id
             JOIN laundry_statuses ls ON o.id = ls.order_id
