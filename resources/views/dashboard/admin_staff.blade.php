@@ -3,15 +3,17 @@
         <x-slot name="header">
             <div>
                 <h1>
-                    {{ auth()->user()->role === 'ADMIN' ? 'Admin Dashboard' : 'Staff Dashboard' }}
+                    {{-- Updated to Spatie hasRole --}}
+                    {{ auth()->user()->hasRole('ADMIN') ? 'Admin Dashboard' : 'Staff Dashboard' }}
                 </h1>
                 <p>Manage all Customer orders</p>
                 
-                @if(auth()->user()->role === 'ADMIN')
+                {{-- Updated to check permission --}}
+                @can('create orders')
                     <a href="{{ route('orders.create') }}">
                         + Add walk-in
                     </a>
-                @endif
+                @endcan
             </div>
         </x-slot>
 
@@ -126,12 +128,17 @@
                                                 </strong>
                                             </div>
 
-                                            <select x-model="colStatus" 
-                                                    @change="performUpdate('{{ route('orders.updateCollection', $order->id) }}', { collection_status: $el.value }, () => { window.dispatchEvent(new CustomEvent('col-updated-{{ $order->id }}', { detail: $el.value })) })" 
-                                                    style="font-size: 11px;">
-                                                <option value="{{ \App\Models\Collection::STATUS_PENDING }}">PENDING</option>
-                                                <option value="{{ \App\Models\Collection::STATUS_RECEIVED }}">RECEIVED</option>
-                                            </select>
+                                            {{-- Use @can to control visibility of dropdown --}}
+                                            @can('update order status')
+                                                <select x-model="colStatus" 
+                                                        @change="performUpdate('{{ route('orders.updateCollection', $order->id) }}', { collection_status: $el.value }, () => { window.dispatchEvent(new CustomEvent('col-updated-{{ $order->id }}', { detail: $el.value })) })" 
+                                                        style="font-size: 11px;">
+                                                    <option value="{{ \App\Models\Collection::STATUS_PENDING }}">PENDING</option>
+                                                    <option value="{{ \App\Models\Collection::STATUS_RECEIVED }}">RECEIVED</option>
+                                                </select>
+                                            @else
+                                                <span style="font-size: 11px;">{{ $order->collection->collection_status }}</span>
+                                            @endcan
                                         </div>
                                     </td>
 
@@ -142,23 +149,28 @@
                                         }" 
                                         @col-updated-{{ $order->id }}.window="isClickable = ($event.detail === '{{ \App\Models\Collection::STATUS_RECEIVED }}')">
                                             
-                                            <select x-model="lauStatus" 
-                                                    @change="performUpdate('{{ route('orders.updateStatus', $order->id) }}', { current_status: $el.value }, () => { window.dispatchEvent(new CustomEvent('laundry-updated-{{ $order->id }}', { detail: $el.value })) })" 
-                                                    :disabled="!isClickable" 
-                                                    style="font-size: 11px; font-weight: bold; width: 100%; display: block;"
-                                                    :style="!isClickable ? 'opacity: 0.5; cursor: not-allowed;' : 'cursor: pointer; background: #fff; border: 1px solid #000;'">
-                                                
-                                                <option value="{{ \App\Models\LaundryStatus::PENDING }}">PENDING</option>
-                                                <option value="{{ \App\Models\LaundryStatus::WASHING }}">WASHING</option>
-                                                <option value="{{ \App\Models\LaundryStatus::DRYING }}">DRYING</option>
-                                                <option value="{{ \App\Models\LaundryStatus::FOLDING }}">FOLDING</option>
-                                                <option value="{{ \App\Models\LaundryStatus::IRONING }}">IRONING</option>
-                                                <option value="{{ \App\Models\LaundryStatus::READY }}">READY</option>
-                                            </select>
+                                            {{-- Use @can to control visibility of dropdown --}}
+                                            @can('update order status')
+                                                <select x-model="lauStatus" 
+                                                        @change="performUpdate('{{ route('orders.updateStatus', $order->id) }}', { current_status: $el.value }, () => { window.dispatchEvent(new CustomEvent('laundry-updated-{{ $order->id }}', { detail: $el.value })) })" 
+                                                        :disabled="!isClickable" 
+                                                        style="font-size: 11px; font-weight: bold; width: 100%; display: block;"
+                                                        :style="!isClickable ? 'opacity: 0.5; cursor: not-allowed;' : 'cursor: pointer; background: #fff; border: 1px solid #000;'">
+                                                    
+                                                    <option value="{{ \App\Models\LaundryStatus::PENDING }}">PENDING</option>
+                                                    <option value="{{ \App\Models\LaundryStatus::WASHING }}">WASHING</option>
+                                                    <option value="{{ \App\Models\LaundryStatus::DRYING }}">DRYING</option>
+                                                    <option value="{{ \App\Models\LaundryStatus::FOLDING }}">FOLDING</option>
+                                                    <option value="{{ \App\Models\LaundryStatus::IRONING }}">IRONING</option>
+                                                    <option value="{{ \App\Models\LaundryStatus::READY }}">READY</option>
+                                                </select>
 
-                                            <template x-if="!isClickable">
-                                                <div style="font-size: 9px; color: #dc2626; margin-top: 4px;">Receive items first</div>
-                                            </template>
+                                                <template x-if="!isClickable">
+                                                    <div style="font-size: 9px; color: #dc2626; margin-top: 4px;">Receive items first</div>
+                                                </template>
+                                            @else
+                                                <span style="font-size: 11px; font-weight: bold;">{{ $order->laundryStatus->current_status }}</span>
+                                            @endcan
                                         </div>
                                     </td>
 
@@ -166,7 +178,8 @@
                                         <div x-data="{ payStatus: '{{ $order->payment->payment_status }}' }">
                                             <strong>Php {{ number_format($order->total_price, 2) }}</strong>
                                             
-                                            @if(auth()->user()->role === 'ADMIN')
+                                            {{-- Admin check or specific permission --}}
+                                            @can('process payments')
                                                 <select x-model="payStatus" 
                                                         @change="performUpdate('{{ route('orders.updatePayment', $order->id) }}', { payment_status: $el.value }, () => { window.location.reload(); })" 
                                                         style="font-size: 11px; display: block; width: 100%; margin-top: 4px;">
@@ -174,9 +187,11 @@
                                                     <option value="{{ \App\Models\Payment::STATUS_PAID }}">PAID</option>
                                                 </select>
                                             @else
-                                                <x-order-status-badge :status="$order->payment->payment_status" class="block mt-1" />
-                                            @endif
-                                            </div>
+                                                <div style="margin-top: 4px;">
+                                                    <x-order-status-badge :status="$order->payment->payment_status" class="block mt-1" />
+                                                </div>
+                                            @endcan
+                                        </div>
                                     </td>
 
                                     <td x-data="{ showScheduleModal: false, scheduledDate: '{{ $order->delivery->scheduled_delivery_date ? $order->delivery->scheduled_delivery_date->format('Y-m-d\TH:i') : '' }}' }">
@@ -185,18 +200,22 @@
                                                 {{ str_replace('_', ' ', $order->delivery->delivery_method) }}
                                             </strong>
 
-                                            <select @change="performUpdate('{{ route('orders.updateDelivery', $order->id) }}', { delivery_status: $el.value }, () => { window.location.reload() })"
-                                                    style="font-size: 11px; padding: 2px;" class="border rounded">
-                                                <option value="READY" {{ $order->delivery->delivery_status == 'READY' ? 'selected' : '' }}>READY</option>
-                                                <option value="DELIVERED" {{ $order->delivery->delivery_status == 'DELIVERED' ? 'selected' : '' }}>DELIVERED</option>
-                                            </select>
+                                            @can('update order status')
+                                                <select @change="performUpdate('{{ route('orders.updateDelivery', $order->id) }}', { delivery_status: $el.value }, () => { window.location.reload() })"
+                                                        style="font-size: 11px; padding: 2px;" class="border rounded">
+                                                    <option value="READY" {{ $order->delivery->delivery_status == 'READY' ? 'selected' : '' }}>READY</option>
+                                                    <option value="DELIVERED" {{ $order->delivery->delivery_status == 'DELIVERED' ? 'selected' : '' }}>DELIVERED</option>
+                                                </select>
 
-                                            @if($order->delivery->delivery_status !== 'DELIVERED')
-                                                <button @click="showScheduleModal = true" 
-                                                        style="font-size: 9px; padding: 2px 5px; cursor: pointer; border: 1px solid #ddd; background: #f9f9f9;">
-                                                    {{ $order->delivery->scheduled_delivery_date ? 'Change Sched' : 'Set Sched' }}
-                                                </button>
-                                            @endif
+                                                @if($order->delivery->delivery_status !== 'DELIVERED')
+                                                    <button @click="showScheduleModal = true" 
+                                                            style="font-size: 9px; padding: 2px 5px; cursor: pointer; border: 1px solid #ddd; background: #f9f9f9;">
+                                                        {{ $order->delivery->scheduled_delivery_date ? 'Change Sched' : 'Set Sched' }}
+                                                    </button>
+                                                @endif
+                                            @else
+                                                <span style="font-size: 11px;">{{ $order->delivery->delivery_status }}</span>
+                                            @endcan
                                         </div>
 
                                         <div x-show="showScheduleModal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.5); z-index: 10000; display: flex; align-items: center; justify-content: center;">
@@ -218,15 +237,21 @@
                                                         showDetails = true">
                                             View Tracking
                                         </button>
-                                        @if($order->isCancellable() && auth()->user()->role === 'ADMIN')
-                                            @can('cancel', $order)
-                                                <form action="{{ route('orders.cancel', $order->id) }}" method="POST">
-                                                    @csrf @method('PATCH')
-                                                    <button type="submit" onclick="return confirm('Are you sure?')">CANCEL</button>
+                                        @if($order->isCancellable())
+                                            {{-- This checks the Policy 'cancel' method --}}
+                                            @can('cancel any order', $order)
+                                                <form action="{{ route('orders.cancel', $order->id) }}" method="POST" style="display:inline;">
+                                                    @csrf 
+                                                    @method('PATCH')
+                                                    <button type="submit" 
+                                                            class="text-red-600 hover:text-red-900 font-bold underline" 
+                                                            onclick="return confirm('Are you sure you want to cancel this order?')">
+                                                        CANCEL
+                                                    </button>
                                                 </form>
                                             @endcan
                                         @endif
-                                        
+
                                         @if($order->order_status !== \App\Models\Order::STATUS_ACTIVE)
                                             <span>{{ $order->order_status }}</span>
                                         @endif
@@ -295,6 +320,7 @@
                 <button @click="showDetails = false" style="margin-top: 20px; width: 100%; background: #f1f5f9; color: #1e293b; border: none; padding: 10px; border-radius: 6px; font-weight: bold; cursor: pointer;">Close History</button>
             </div>
         </div>
+    </div>
 </x-app-layout>
 
 <script>
@@ -305,12 +331,6 @@
             showDetails: false,
             selectedOrder: { audits: [] },
 
-            /**
-             * Centralized Update Function
-             * @param {string} url
-             * @param {object} payload
-             * @param {function} successCallback 
-             */
             async performUpdate(url, payload, successCallback) {
                 try {
                     const response = await fetch(url, {
@@ -322,21 +342,17 @@
                         body: JSON.stringify(payload)
                     });
 
-                    // 1. Success handling (Status 200)
                     if (response.status === 200) {
                         successCallback();
                     } 
-                    // 2. Permission handling (Status 403 - Forbidden)
                     else if (response.status === 403) {
                         alert('Unauthorized: Wala kang permiso na gawin ito.');
                         window.location.reload(); 
                     } 
-                    // 3. Validation or Logic error (Status 422 o 400)
                     else if (response.status === 422) {
                         const data = await response.json();
                         alert('Error: ' + (data.message || 'Invalid data.'));
                     }
-                    // 4. Server Error handling (Status 500)
                     else {
                         alert('May nangyaring mali sa server. Pakisubukang muli.');
                     }
