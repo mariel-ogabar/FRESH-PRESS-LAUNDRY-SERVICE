@@ -14,7 +14,6 @@ return new class extends Migration {
         DB::unprepared("DROP TRIGGER IF EXISTS trg_LaundryStatus_Audit");
 
         // 2. Automated History Tracking
-        // Everytime mag-uupdate ng laundry_statuses, automatic na mag-iinsert sa audits table.
         DB::unprepared("
             CREATE TRIGGER trg_LaundryStatus_Audit
             AFTER UPDATE ON laundry_statuses
@@ -28,7 +27,6 @@ return new class extends Migration {
         ");
 
         // 3. Atomic Payment Processing
-        // Updated Payment at Order Status.
         DB::unprepared("
             CREATE PROCEDURE sp_ProcessPayment(IN target_order_id INT)
             BEGIN

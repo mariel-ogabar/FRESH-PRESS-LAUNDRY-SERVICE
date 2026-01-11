@@ -17,6 +17,8 @@ return new class extends Migration
             $table->decimal('total_price', 10, 2);
             $table->enum('order_status', ['ACTIVE','CANCELLED','COMPLETED'])->default('ACTIVE');
             $table->timestamps();
+
+            $table->softDeletes();
         });
     }
 

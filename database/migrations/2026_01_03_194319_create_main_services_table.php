@@ -18,6 +18,8 @@ return new class extends Migration
             $table->decimal('service_base_price', 10, 2);
             $table->boolean('is_active')->default(true);
             $table->timestamps();
+
+            $table->softDeletes();
         });
     }
 

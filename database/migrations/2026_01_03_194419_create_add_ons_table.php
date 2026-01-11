@@ -18,6 +18,8 @@ return new class extends Migration
             $table->boolean('multiple_allowed')->default(false);
             $table->boolean('is_active')->default(true);
             $table->timestamps();
+
+            $table->softDeletes();
         });
     }
 
