@@ -4,16 +4,35 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Support\Facades\Auth;
 
 class Order extends Model {
-    
     use SoftDeletes;
 
     const STATUS_ACTIVE = 'ACTIVE';
     const STATUS_CANCELLED = 'CANCELLED';
     const STATUS_COMPLETED = 'COMPLETED';
-    
+   
     protected $fillable = ['user_id', 'total_price', 'order_status'];
+
+    /**
+     * GLOBAL SECURITY SCOPE
+     * This automatically filters all queries for Customers.
+     */
+    protected static function booted()
+    {
+        // You must include 'Builder $builder' inside the function( )
+        static::addGlobalScope('own_orders', function (Builder $builder) {
+            if (Auth::check()) {
+                $user = Auth::user();
+                if (!$user->hasAnyRole(['ADMIN', 'STAFF'])) {
+                    // Now $builder is recognized
+                    $builder->where('orders.user_id', $user->id);
+                }
+            }
+        });
+    }
 
     public function user() { return $this->belongsTo(User::class); }
     public function services() { return $this->hasMany(OrderService::class); }
@@ -22,21 +41,12 @@ class Order extends Model {
     public function collection() { return $this->hasOne(Collection::class); }
     public function delivery() { return $this->hasOne(Delivery::class); }
     public function audits() { return $this->hasMany(LaundryStatusAudit::class)->orderBy('changed_at', 'desc'); }
-    public function addons()
-    {
-        return $this->belongsToMany(
-            AddOn::class,    
-            'order_addon',  
-            'order_service_id',      
-            'addon_id'       
-        );
-    }
 
     public function isCancellable(): bool
     {
-        $isCollectionPending = $this->collection->collection_status === \App\Models\Collection::STATUS_PENDING;
-        $isPaymentPending = $this->payment->payment_status === \App\Models\Payment::STATUS_PENDING;
-
-        return $this->order_status === self::STATUS_ACTIVE && $isCollectionPending && $isPaymentPending;
+        return $this->order_status === self::STATUS_ACTIVE && 
+               $this->collection->collection_status === 'PENDING' && 
+               $this->payment->payment_status === 'PENDING';
     }
+
 }
