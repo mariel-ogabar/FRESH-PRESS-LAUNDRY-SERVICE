@@ -13,4 +13,14 @@ class User extends Authenticatable
     public function getAuthPassword() {
         return $this->password;
     }
+
+    public function getEmailAttribute()
+    {
+        return $this->email_add;
+    }
+
+    public function setEmailAttribute($value)
+    {
+        $this->attributes['email_add'] = $value;
+    }
 }
