@@ -33,7 +33,8 @@ class RegisteredUserController extends Controller
             'name' => ['required', 'string', 'max:255'],
             'email' => ['required', 'string', 'lowercase', 'email', 'max:255', 'unique:'.User::class],
             'password' => ['required', 'confirmed', Rules\Password::defaults()],
-            'contact_no' => ['required', 'string', 'max:20'],
+            // ADD THESE:
+            'contact_no' => ['required', 'string', 'max:20'], 
             'address' => ['required', 'string', 'max:500'],
         ]);
 
@@ -41,10 +42,13 @@ class RegisteredUserController extends Controller
             'name' => $request->name,
             'email' => $request->email,
             'password' => Hash::make($request->password),
+            // ADD THESE:
             'contact_no' => $request->contact_no,
             'address' => $request->address,
-            'role' => 'CUSTOMER',
         ]);
+
+        // Assign the Spatie Role (Fixes the missing navbar issue too!)
+        $user->assignRole('CUSTOMER');
 
         event(new Registered($user));
 
