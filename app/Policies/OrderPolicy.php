@@ -10,11 +10,23 @@ class OrderPolicy
     
     public function cancel(User $user, Order $order): bool
     {
-        if ($user->role === 'ADMIN') {
-            return $order->isCancellable();
+        // 1. If the order isn't in a cancellable state (e.g., already received), no one can cancel.
+        if (!$order->isCancellable()) {
+            return false;
         }
 
-        return $user->id === $order->user_id && $order->isCancellable();
+        // 2. Admin can always cancel cancellable orders
+        if ($user->hasRole('ADMIN')) {
+            return true;
+        }
+
+        // 3. Staff can cancel if they have the specific permission
+        if ($user->hasPermissionTo('cancel any order')) {
+            return true;
+        }
+
+        // 4. Customers can only cancel their own orders
+        return $user->id === $order->user_id;
     }
 
     public function updateStatus(User $user): bool
