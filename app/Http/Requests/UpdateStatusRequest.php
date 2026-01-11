@@ -13,10 +13,11 @@ class UpdateStatusRequest extends FormRequest
 {
     public function authorize(): bool
     {
-        $user = Auth::user();
-        return $user && in_array($user->role, ['ADMIN', 'STAFF']);
+        // This allows both ADMIN and STAFF to pass
+        return \Illuminate\Support\Facades\Auth::check() && 
+            \Illuminate\Support\Facades\Auth::user()->hasAnyRole(['ADMIN', 'STAFF']);
     }
-
+    
     public function rules(): array
     {
         return [
