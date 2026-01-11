@@ -1,0 +1,92 @@
+<?php
+
+namespace App\Http\Controllers\Admin;
+
+use App\Http\Controllers\Controller;
+use App\Models\MainService;
+use App\Models\AddOn;
+use App\Http\Requests\Admin\StoreServiceRequest; // Added
+use App\Http\Requests\Admin\StoreAddonRequest;  // Added
+use Illuminate\Http\Request;
+
+class ServiceController extends Controller
+{
+    public function index()
+    {
+        $services = MainService::withTrashed()->get();
+        $addons = AddOn::withTrashed()->get();
+        
+        return view('admin.services.index', compact('services', 'addons'));
+    }
+
+    /**
+     * Store Main Service securely
+     */
+    public function storeService(StoreServiceRequest $request)
+    {
+        // Using validated() prevents injection of 'is_active' or 'deleted_at'
+        MainService::create($request->validated());
+
+        return back()->with('success', 'New service added to the menu.');
+    }
+
+    /**
+     * Store Add-on securely
+     */
+    public function storeAddon(StoreAddonRequest $request)
+    {
+        AddOn::create($request->validated());
+
+        return back()->with('success', 'New add-on added.');
+    }
+
+    public function toggleService($id)
+    {
+        $service = MainService::findOrFail($id);
+        $service->update(['is_active' => !$service->is_active]);
+
+        return back()->with('success', 'Service status updated.');
+    }
+
+    public function destroyService($id)
+    {
+        MainService::findOrFail($id)->delete(); 
+        return back()->with('success', 'Service archived.');
+    }
+
+    public function restoreService($id)
+    {
+        MainService::withTrashed()->findOrFail($id)->restore();
+        return back()->with('success', 'Service restored.');
+    }
+
+    /**
+     * Update Service securely
+     */
+    public function updateService(StoreServiceRequest $request, $id)
+    {
+        $service = MainService::findOrFail($id);
+        $service->update($request->validated());
+
+        return back()->with('success', 'Service updated successfully.');
+    }
+
+    /**
+     * Update Add-on securely
+     */
+    public function updateAddon(StoreAddonRequest $request, $id)
+    {
+        $addon = AddOn::findOrFail($id);
+        $addon->update($request->validated());
+
+        return back()->with('success', 'Add-on updated successfully.');
+    }
+
+    public function destroyAddon($id)
+    {
+        $addon = AddOn::findOrFail($id);
+        $addon->delete(); 
+
+        return back()->with('success', 'Add-on has been removed.');
+    }
+}
