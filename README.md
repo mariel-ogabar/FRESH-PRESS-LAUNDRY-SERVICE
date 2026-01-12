@@ -1,59 +1,127 @@
-<p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
+# FreshPress Laundry Management System (v1)
 
-<p align="center">
-<a href="https://github.com/laravel/framework/actions"><img src="https://github.com/laravel/framework/workflows/tests/badge.svg" alt="Build Status"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/dt/laravel/framework" alt="Total Downloads"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/v/laravel/framework" alt="Latest Stable Version"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
-</p>
+FreshPress is a comprehensive, service-oriented Laundry Management System built on **Laravel 12**. It is designed to bridge the gap between physical walk-in laundry operations and a digital customer tracking experience.
 
-## About Laravel
+## 🚀 Core Features
 
-Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
+* **Walk-in Order Management:** Staff can create orders for customers using just an email. The system automatically provisions a digital account for new customers.
+* **Automated Pricing Engine:** Real-time calculation based on service types (Per KG vs. Per Item) and auxiliary add-ons.
+* **Live Status Tracking:** Customers can track their laundry progress (Washing, Drying, Ironing, etc.) through a reactive timeline.
+* **Database-Level Auditing:** Uses MySQL Triggers to ensure a 100% tamper-proof history of every status change.
+* **Role-Based Access Control (RBAC):** Granular permissions for Admin, Staff, and Customers using Spatie.
+* **Data Privacy Scopes:** Built-in global security scopes that ensure customers can never view orders belonging to others at the database driver level.
 
-- [Simple, fast routing engine](https://laravel.com/docs/routing).
-- [Powerful dependency injection container](https://laravel.com/docs/container).
-- Multiple back-ends for [session](https://laravel.com/docs/session) and [cache](https://laravel.com/docs/cache) storage.
-- Expressive, intuitive [database ORM](https://laravel.com/docs/eloquent).
-- Database agnostic [schema migrations](https://laravel.com/docs/migrations).
-- [Robust background job processing](https://laravel.com/docs/queues).
-- [Real-time event broadcasting](https://laravel.com/docs/broadcasting).
+---
 
-Laravel is accessible, powerful, and provides tools required for large, robust applications.
+## 🛠 Tech Stack
 
-## Learning Laravel
+* **Framework:** Laravel 12
+* **Language:** PHP 8.2+
+* **Database:** MySQL 8.0+ (With Native Triggers)
+* **Frontend:** Tailwind CSS, Alpine.js (via Laravel Breeze)
+* **Security:** Spatie Laravel-Permission, Laravel Sanctum
 
-Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework. You can also check out [Laravel Learn](https://laravel.com/learn), where you will be guided through building a modern Laravel application.
+---
 
-If you don't feel like reading, [Laracasts](https://laracasts.com) can help. Laracasts contains thousands of video tutorials on a range of topics including Laravel, modern PHP, unit testing, and JavaScript. Boost your skills by digging into our comprehensive video library.
+## 📂 Project Structure
 
-## Laravel Sponsors
+```text
+app/
+├── Http/Controllers/   # Request handling & UI orchestration
+├── Http/Requests/      # Rigorous input validation & sanitization
+├── Models/             # Eloquent entities with Global Security Scopes
+├── Providers/          # Global system settings & RBAC Master Key
+└── Services/           # Complex Business Logic (Pricing & Identity)
+database/
+├── migrations/         # Schema definitions & MySQL Triggers
+└── seeders/            # Roles, Permissions, and Master Data
 
-We would like to extend our thanks to the following sponsors for funding Laravel development. If you are interested in becoming a sponsor, please visit the [Laravel Partners program](https://partners.laravel.com).
+```
 
-### Premium Partners
+---
 
-- **[Vehikl](https://vehikl.com)**
-- **[Tighten Co.](https://tighten.co)**
-- **[Kirschbaum Development Group](https://kirschbaumdevelopment.com)**
-- **[64 Robots](https://64robots.com)**
-- **[Curotec](https://www.curotec.com/services/technologies/laravel)**
-- **[DevSquad](https://devsquad.com/hire-laravel-developers)**
-- **[Redberry](https://redberry.international/laravel-development)**
-- **[Active Logic](https://activelogic.com)**
+## ⚙️ Installation Guide
 
-## Contributing
+### 1. Prerequisites
 
-Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
+Ensure you have the following installed:
 
-## Code of Conduct
+* PHP 8.2+
+* Composer
+* Node.js & NPM
+* MySQL
 
-In order to ensure that the Laravel community is welcoming to all, please review and abide by the [Code of Conduct](https://laravel.com/docs/contributions#code-of-conduct).
+### 2. Clone and Setup
 
-## Security Vulnerabilities
+```bash
+# Clone the repository
+git clone https://github.com/your-username/freshpress-v1.git
+cd freshpress-v1
 
-If you discover a security vulnerability within Laravel, please send an e-mail to Taylor Otwell via [taylor@laravel.com](mailto:taylor@laravel.com). All security vulnerabilities will be promptly addressed.
+# Install Backend Dependencies
+composer install
 
-## License
+# Install Frontend Dependencies
+npm install
 
-The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+```
+
+### 3. Environment Configuration
+
+Copy the example environment file and generate the app key:
+
+```bash
+cp .env.example .env
+php artisan key:generate
+
+```
+
+*Configure your `DB_DATABASE`, `DB_USERNAME`, and `DB_PASSWORD` in the `.env` file.*
+
+### 4. Database Initialization
+
+This will create the tables, inject the MySQL Triggers, and seed the Roles/Permissions:
+
+```bash
+php artisan migrate --seed
+
+```
+
+### 5. Launch
+
+```bash
+# Compile assets
+npm run dev
+
+# Start the local server
+php artisan serve
+
+```
+
+---
+
+## 🔒 Security Architecture
+
+FreshPress implements a **"Security-by-Default"** model:
+
+1. **Gate Bypass:** The `AppServiceProvider` contains a `Gate::before` rule allowing the `ADMIN` role to bypass all permission checks to prevent lockouts.
+2. **Global Scopes:** The `Order` model automatically filters queries so `CUSTOMERS` only see their own records.
+3. **Atomic Transactions:** All order creations are wrapped in `DB::transaction` to ensure data integrity across multiple tables (Payments, Status, Logistics).
+
+---
+
+## 📊 Database Triggers
+
+The system utilizes a native MySQL trigger `trg_LaundryStatus_Audit`. This ensures that even if a record is updated via a database terminal (bypassing the PHP application), a historical log of the status change is still generated in the `laundry_status_audits` table.
+
+---
+
+## 🤝 Contributing
+
+For development, please ensure that you run `npm run dev` to compile Tailwind styles and Alpine.js logic. All business logic changes should be made within the `app/Services` layer rather than the Controllers.
+
+---
+
+## 📄 License
+
+This project is licensed under the MIT License.
