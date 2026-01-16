@@ -69,19 +69,18 @@ Route::middleware('auth')->group(function () {
             Route::delete('/staff/{staff}', [StaffController::class, 'destroy'])->name('staff.destroy');
         });
 
-        // Service & Pricing Management
+        // Service & Pricing Management (Active/Inactive Toggle Focus)
         Route::middleware('permission:manage services')->group(function () {
+            // Main Services
             Route::get('/services', [ServiceController::class, 'index'])->name('services.index');
             Route::post('/services', [ServiceController::class, 'storeService'])->name('services.store');
-            Route::patch('/services/{id}', [ServiceController::class, 'updateService'])->name('services.update'); // Fixed Name
-            Route::delete('/services/{id}', [ServiceController::class, 'destroyService'])->name('services.destroy');
-            Route::post('/services/restore/{id}', [ServiceController::class, 'restoreService'])->name('services.restore');
+            Route::patch('/services/{id}', [ServiceController::class, 'updateService'])->name('services.update');
             Route::patch('/services/{id}/toggle', [ServiceController::class, 'toggleService'])->name('services.toggle');
-            Route::delete('/addons/{id}', [ServiceController::class, 'destroyAddon'])->name('addons.destroy');
             
             // Addon Routes
             Route::post('/addons', [ServiceController::class, 'storeAddon'])->name('addons.store');
-            Route::patch('/addons/{id}', [ServiceController::class, 'updateAddon'])->name('addons.update'); // Fixed Name
+            Route::patch('/addons/{id}', [ServiceController::class, 'updateAddon'])->name('addons.update');
+            Route::patch('/addons/{id}/toggle', [ServiceController::class, 'toggleAddon'])->name('addons.toggle'); // Eto ang nawawalang route kanina
         });
     });
 

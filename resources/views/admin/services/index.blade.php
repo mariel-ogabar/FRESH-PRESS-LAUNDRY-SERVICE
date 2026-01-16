@@ -31,9 +31,12 @@
                     </thead>
                     <tbody>
                         @foreach($services as $service)
-                        <tr x-data="{ editing: false }" style="border-bottom: 1px solid black;">
+                        <tr x-data="{ editing: false }" style="border-bottom: 1px solid black; {{ $service->is_active ? '' : 'background-color: #f3f4f6; opacity: 0.7;' }}">
                             {{-- View Mode --}}
-                            <td x-show="!editing" style="border: 1px solid black; padding: 10px;">{{ $service->service_name }}</td>
+                            <td x-show="!editing" style="border: 1px solid black; padding: 10px;">
+                                {{ $service->service_name }}
+                                @if(!$service->is_active) <span style="font-size: 10px; color: red;">(DISCONTINUED)</span> @endif
+                            </td>
                             <td x-show="!editing" style="border: 1px solid black; padding: 10px;">₱{{ number_format($service->service_base_price, 2) }}</td>
                             <td x-show="!editing" style="border: 1px solid black; padding: 10px;">{{ $service->pricing_type }}</td>
                             <td x-show="!editing" style="border: 1px solid black; padding: 10px; text-align: center;">
@@ -45,11 +48,7 @@
                                 </form>
                             </td>
                             <td x-show="!editing" style="border: 1px solid black; padding: 10px; text-align: right;">
-                                <button @click="editing = true" style="text-decoration: underline; font-weight: bold; margin-right: 10px; cursor: pointer;">EDIT</button>
-                                <form action="{{ route('admin.services.destroy', $service->id) }}" method="POST" style="display: inline;" onsubmit="return confirm('Are you sure?')">
-                                    @csrf @method('DELETE')
-                                    <button type="submit" style="text-decoration: underline; background: none; border: none; cursor: pointer; color: red;">REMOVE</button>
-                                </form>
+                                <button @click="editing = true" style="text-decoration: underline; font-weight: bold; cursor: pointer;">EDIT</button>
                             </td>
 
                             {{-- Edit Mode --}}
@@ -92,25 +91,33 @@
                         <tr style="background: #f3f3f3;">
                             <th style="border: 1px solid black; padding: 10px; text-align: left;">ADD-ON NAME</th>
                             <th style="border: 1px solid black; padding: 10px; text-align: left;">PRICE</th>
+                            <th style="border: 1px solid black; padding: 10px; text-align: center;">STATUS</th>
                             <th style="border: 1px solid black; padding: 10px; text-align: right;">ACTIONS</th>
                         </tr>
                     </thead>
                     <tbody>
                         @foreach($addons as $addon)
-                        <tr x-data="{ editing: false }" style="border-bottom: 1px solid black;">
+                        <tr x-data="{ editing: false }" style="border-bottom: 1px solid black; {{ $addon->is_active ? '' : 'background-color: #f3f4f6; opacity: 0.7;' }}">
                             {{-- View Mode --}}
-                            <td x-show="!editing" style="border: 1px solid black; padding: 10px;">{{ $addon->addon_name }}</td>
+                            <td x-show="!editing" style="border: 1px solid black; padding: 10px;">
+                                {{ $addon->addon_name }}
+                                @if(!$addon->is_active) <span style="font-size: 10px; color: red;">(DISCONTINUED)</span> @endif
+                            </td>
                             <td x-show="!editing" style="border: 1px solid black; padding: 10px;">₱{{ number_format($addon->addon_price, 2) }}</td>
-                            <td x-show="!editing" style="border: 1px solid black; padding: 10px; text-align: right;">
-                                <button @click="editing = true" style="text-decoration: underline; font-weight: bold; margin-right: 10px; cursor: pointer;">EDIT</button>
-                                <form action="{{ route('admin.addons.destroy', $addon->id) }}" method="POST" style="display: inline;" onsubmit="return confirm('Remove this add-on?')">
-                                    @csrf @method('DELETE')
-                                    <button type="submit" style="text-decoration: underline; background: none; border: none; cursor: pointer; color: red;">REMOVE</button>
+                            <td x-show="!editing" style="border: 1px solid black; padding: 10px; text-align: center;">
+                                <form action="{{ route('admin.addons.toggle', $addon->id) }}" method="POST">
+                                    @csrf @method('PATCH')
+                                    <button type="submit" style="font-weight: bold; cursor: pointer; background: none; border: none; color: {{ $addon->is_active ? 'green' : 'red' }}; text-decoration: underline;">
+                                        {{ $addon->is_active ? 'ACTIVE' : 'INACTIVE' }}
+                                    </button>
                                 </form>
+                            </td>
+                            <td x-show="!editing" style="border: 1px solid black; padding: 10px; text-align: right;">
+                                <button @click="editing = true" style="text-decoration: underline; font-weight: bold; cursor: pointer;">EDIT</button>
                             </td>
 
                             {{-- Edit Mode --}}
-                            <td x-show="editing" colspan="3" style="border: 1px solid black; padding: 10px; background-color: #f9f9f9;">
+                            <td x-show="editing" colspan="4" style="border: 1px solid black; padding: 10px; background-color: #f9f9f9;">
                                 <form action="{{ route('admin.addons.update', $addon->id) }}" method="POST" style="display: flex; gap: 10px; align-items: center;">
                                     @csrf @method('PATCH')
                                     <input type="text" name="addon_name" value="{{ $addon->addon_name }}" required style="flex: 2; border: 1px solid black; padding: 5px;">

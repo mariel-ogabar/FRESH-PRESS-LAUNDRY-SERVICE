@@ -13,9 +13,8 @@ class ServiceController extends Controller
 {
     public function index()
     {
-        $services = MainService::withTrashed()->get();
-        $addons = AddOn::withTrashed()->get();
-        
+        $services = MainService::all();
+        $addons = \App\Models\AddOn::all();        
         return view('admin.services.index', compact('services', 'addons'));
     }
 
@@ -46,6 +45,21 @@ class ServiceController extends Controller
         $service->update(['is_active' => !$service->is_active]);
 
         return back()->with('success', 'Service status updated.');
+    }
+
+    /**
+     * Toggle Add-on status (Active/Inactive)
+     */
+    public function toggleAddon($id)
+    {
+        $addon = AddOn::findOrFail($id);
+        
+        // Babaliktarin ang current status
+        $addon->update([
+            'is_active' => !$addon->is_active
+        ]);
+
+        return back()->with('success', 'Add-on availability updated.');
     }
 
     public function destroyService($id)

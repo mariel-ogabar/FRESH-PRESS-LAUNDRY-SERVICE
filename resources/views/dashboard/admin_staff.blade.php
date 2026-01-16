@@ -100,21 +100,25 @@
                                     </td>
 
                                     <td>
-                                        <strong>{{ $order->services->first()->mainService->service_name ?? 'N/A' }}</strong>
-                                        <br>
-                                        @if($order->services->first())
+                                        @if($order->services->isNotEmpty() && $order->services->first()->mainService)
+                                            <strong>{{ $order->services->first()->mainService->service_name }}</strong>
+                                            <br>
                                             @php
-                                                $serviceName = strtoupper($order->services->first()->mainService->service_name);
+                                                $mainService = $order->services->first()->mainService;
+                                                $serviceName = strtoupper($mainService->service_name);
                                                 $isPerPiece = str_contains($serviceName, 'DRY CLEAN') || str_contains($serviceName, 'STAIN');
-                                                $unit = $isPerPiece ? 'pcs' : ($order->services->first()->mainService->unit ?? 'kg');
+                                                $unit = $isPerPiece ? 'pcs' : ($mainService->unit ?? 'kg');
                                             @endphp
                                             <span>{{ $order->services->first()->quantity }} {{ $unit }}</span>
+                                        @else
+                                            <span class="text-red-500 italic">No Service Linked</span>
                                         @endif
                                         
+                                        {{-- Add-ons display --}}
                                         <div>
                                             @foreach($order->services as $service)
                                                 @foreach($service->addons as $addon)
-                                                    <span>+ {{ $addon->addon_name }}</span>
+                                                    <span class="text-xs text-gray-500">+ {{ $addon->addon_name }}</span>
                                                 @endforeach
                                             @endforeach
                                         </div>
@@ -128,8 +132,7 @@
                                                 </strong>
                                             </div>
 
-                                            {{-- Use @can to control visibility of dropdown --}}
-                                            @can('update order status')
+                                            @can('update order status') {{-- Consistent permission name --}}
                                                 <select x-model="colStatus" 
                                                         @change="performUpdate('{{ route('orders.updateCollection', $order->id) }}', { collection_status: $el.value }, () => { window.dispatchEvent(new CustomEvent('col-updated-{{ $order->id }}', { detail: $el.value })) })" 
                                                         style="font-size: 11px;">
@@ -149,10 +152,9 @@
                                         }" 
                                         @col-updated-{{ $order->id }}.window="isClickable = ($event.detail === '{{ \App\Models\Collection::STATUS_RECEIVED }}')">
                                             
-                                            {{-- Use @can to control visibility of dropdown --}}
-                                            @can('update order status')
+                                            @can('update order status') {{-- Matches the others now --}}
                                                 <select x-model="lauStatus" 
-                                                        @change="performUpdate('{{ route('orders.updateStatus', $order->id) }}', { current_status: $el.value }, () => { window.dispatchEvent(new CustomEvent('laundry-updated-{{ $order->id }}', { detail: $el.value })) })" 
+                                                        @change="performUpdate('{{ route('orders.updateStatus', $order->id) }}', { current_status: $el.value }, () => { window.location.reload() })" 
                                                         :disabled="!isClickable" 
                                                         style="font-size: 11px; font-weight: bold; width: 100%; display: block;"
                                                         :style="!isClickable ? 'opacity: 0.5; cursor: not-allowed;' : 'cursor: pointer; background: #fff; border: 1px solid #000;'">
@@ -194,12 +196,17 @@
                                         </div>
                                     </td>
 
-                                    <td x-data="{ showScheduleModal: false, scheduledDate: '{{ $order->delivery->scheduled_delivery_date ? $order->delivery->scheduled_delivery_date->format('Y-m-d\TH:i') : '' }}' }">
+                                    <td x-data="{ 
+                                        showScheduleModal: false, 
+                                        scheduledDate: '{{ $order->delivery->scheduled_delivery_date ? $order->delivery->scheduled_delivery_date->format('Y-m-d\TH:i') : '' }}' 
+                                    }">
                                         <div class="flex flex-col space-y-2">
+                                            {{-- Delivery Method Label --}}
                                             <strong style="font-size: 10px; text-transform: uppercase; color: #6b7280;">
                                                 {{ str_replace('_', ' ', $order->delivery->delivery_method) }}
                                             </strong>
 
+                                            {{-- Permission Check: Dapat tugma sa Seeder mo --}}
                                             @can('update order status')
                                                 <select @change="performUpdate('{{ route('orders.updateDelivery', $order->id) }}', { delivery_status: $el.value }, () => { window.location.reload() })"
                                                         style="font-size: 11px; padding: 2px;" class="border rounded">
@@ -214,18 +221,31 @@
                                                     </button>
                                                 @endif
                                             @else
-                                                <span style="font-size: 11px;">{{ $order->delivery->delivery_status }}</span>
+                                                {{-- Kung walang permission, text lang ang makikita --}}
+                                                <span style="font-size: 11px; font-weight: bold; color: #374151;">
+                                                    {{ $order->delivery->delivery_status }}
+                                                </span>
+                                                @if($order->delivery->scheduled_delivery_date)
+                                                    <small style="font-size: 9px; color: #6b7280;">
+                                                        Sched: {{ $order->delivery->scheduled_delivery_date->format('M d, g:i A') }}
+                                                    </small>
+                                                @endif
                                             @endcan
                                         </div>
 
-                                        <div x-show="showScheduleModal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.5); z-index: 10000; display: flex; align-items: center; justify-content: center;">
-                                            <div @click.away="showScheduleModal = false" style="background:white; padding:20px; border-radius: 8px; width: 300px;">
+                                        {{-- Schedule Modal --}}
+                                        <div x-show="showScheduleModal" 
+                                            x-transition
+                                            style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.5); z-index: 10000; display: flex; align-items: center; justify-content: center;">
+                                            <div @click.away="showScheduleModal = false" style="background:white; padding:20px; border-radius: 8px; width: 300px; box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1);">
                                                 <h4 style="margin-bottom: 10px; font-weight: bold;">Set Delivery Date</h4>
                                                 <input type="datetime-local" x-model="scheduledDate" style="width: 100%; border: 1px solid #ccc; padding: 5px; margin-bottom: 10px;">
                                                 <div style="display: flex; justify-content: flex-end; gap: 10px;">
-                                                    <button @click="showScheduleModal = false" style="font-size: 11px;">Cancel</button>
+                                                    <button @click="showScheduleModal = false" style="font-size: 11px; color: #6b7280;">Cancel</button>
                                                     <button @click="performUpdate('{{ route('orders.setDeliverySchedule', $order->id) }}', { scheduled_date: scheduledDate }, () => { window.location.reload() })" 
-                                                            style="background: #4f46e5; color: white; padding: 5px 10px; border: none; cursor: pointer; font-size: 11px;">Save</button>
+                                                            style="background: #4f46e5; color: white; padding: 5px 10px; border: none; border-radius: 4px; cursor: pointer; font-size: 11px;">
+                                                        Save Schedule
+                                                    </button>
                                                 </div>
                                             </div>
                                         </div>
