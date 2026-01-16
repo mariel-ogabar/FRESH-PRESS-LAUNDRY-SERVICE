@@ -1,43 +1,36 @@
 <!DOCTYPE html>
 <html lang="{{ str_replace('_', '-', app()->getLocale()) }}">
-    <head>
-        <meta charset="utf-8">
-        <meta name="viewport" content="width=device-width, initial-scale=1">
-        <meta name="csrf-token" content="{{ csrf_token() }}">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="csrf-token" content="{{ csrf_token() }}">
+    <title>{{ config('app.name', 'FreshPress') }}</title>
+    @vite(['resources/css/app.css', 'resources/js/app.js'])
+</head>
+<body class="font-sans antialiased bg-gray-50 text-fp-dark">
+    <div class="min-h-screen flex flex-col">
+        {{-- I-include ang updated navigation --}}
+        @include('layouts.navigation')
 
-        <title>FreshPress Laundry - {{ auth()->user()->role }} Dashboard</title>
-
-        <link rel="preconnect" href="https://fonts.googleapis.com">
-        <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-        @vite(['resources/css/app.css', 'resources/js/app.js'])
-
-        <style>
-            body { font-family: 'Plus Jakarta Sans', sans-serif; background-color: #f8fafc; }
-        </style>
-    </head>
-    <body class="antialiased">
-        <div class="min-h-screen">
-            @include('layouts.navigation')
-
-            @if (isset($header))
-                <header class="bg-white">
-                    <div class="max-w-7xl mx-auto py-6 px-4 sm:px-6 lg:px-8">
-                        {{ $header }}
-                    </div>
-                </header>
-            @endif
-
-            <main class="py-12">
-                <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
-                    @if (session('success'))
-                        <div class="mb-4 p-4 bg-green-100 border-l-4 border-green-500 text-green-700 font-bold text-sm rounded-r-lg">
-                            {{ session('success') }}
-                        </div>
-                    @endif
-
-                    {{ $slot }}
+        {{-- Page Heading (Header Slot) --}}
+        @if (isset($header))
+            <header class="bg-white border-b border-gray-100">
+                <div class="max-w-7xl mx-auto py-8 px-6 lg:px-8">
+                    {{ $header }}
                 </div>
-            </main>
-        </div>
-    </body>
+            </header>
+        @endif
+
+        {{-- Main Page Content --}}
+        <main class="flex-grow py-12">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                {{ $slot }}
+            </div>
+        </main>
+
+        <footer class="py-10 text-center border-t border-gray-100 bg-white">
+            <p class="text-[10px] font-bold text-gray-300 uppercase tracking-[0.4em]">© 2026 FreshPress Laundry Operations</p>
+        </footer>
+    </div>
+</body>
 </html>
