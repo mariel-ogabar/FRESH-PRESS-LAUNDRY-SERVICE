@@ -42,6 +42,12 @@ class Order extends Model {
     public function delivery() { return $this->hasOne(Delivery::class); }
     public function audits() { return $this->hasMany(LaundryStatusAudit::class)->orderBy('changed_at', 'desc'); }
 
+    
+    public function isReceived(): bool
+    {
+        return $this->collection && $this->collection->collection_status === 'RECEIVED';
+    }
+
     public function isCancellable(): bool
     {
         return $this->order_status === self::STATUS_ACTIVE && 
