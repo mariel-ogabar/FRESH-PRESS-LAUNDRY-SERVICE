@@ -1,21 +1,59 @@
+/* resources/css/app.css */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
 @layer base {
     body {
-        /* Dito natin sinisiguro na lahat ng page ay naka-Soft Blue background */
-        @apply bg-fp-soft text-fp-dark antialiased;
+        font-family: 'Inter', sans-serif;
+        /* background shade */
+        @apply bg-[#F8FAFC] text-slate-800 antialiased; 
     }
 
+    /* headers */
     h1, h2, h3, h4 {
-        @apply font-bold tracking-tight;
+        @apply font-black uppercase tracking-tighter;
+    }
+
+    /* Standardizes inputs */
+    input, select, textarea {
+        @apply font-medium text-slate-700 rounded-xl border-slate-200 transition-all focus:ring-4 focus:ring-indigo-500/5 focus:border-indigo-300;
     }
 }
 
 @layer components {
-    /* Custom utility para sa glassmorphism nav kung kailangan */
-    .glass-nav {
-        @apply bg-white/80 backdrop-blur-md border-b border-white/20;
+    /* Laravel's default Tailwind paginator */
+    .architecture-pagination nav span[aria-current="page"] > span {
+        @apply !bg-slate-800 !border-slate-800 !text-white !rounded-xl !text-[10px] !font-bold !px-4 !py-2 !shadow-lg !shadow-slate-200;
+    }
+
+    .architecture-pagination nav a {
+        @apply !text-slate-400 !border-slate-100 hover:!bg-slate-50 !rounded-xl !text-[10px] !font-medium !px-4 !py-2 !transition-all;
+    }
+
+    .architecture-pagination svg {
+        @apply w-4 h-4;
+    }
+
+    /* CUSTOM INDUSTRIAL SCROLLBAR */
+    .custom-scrollbar::-webkit-scrollbar {
+        width: 4px;
+    }
+
+    .custom-scrollbar::-webkit-scrollbar-track {
+        @apply bg-slate-50 rounded-full;
+    }
+
+    .custom-scrollbar::-webkit-scrollbar-thumb {
+        @apply bg-slate-200 rounded-full hover:bg-indigo-300 transition-colors;
+    }
+}
+
+@layer utilities {
+    /* Utility for technical status labels */
+    .label-specs {
+        @apply text-[10px] font-bold text-slate-300 uppercase tracking-[0.2em] leading-none;
     }
 }
