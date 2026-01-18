@@ -1,5 +1,5 @@
 <nav x-data="{ open: false }" class="bg-white border-b border-gray-100 sticky top-0 z-50">
-    {{-- 1. ANTI-FLASH STYLE: This hides the menu until Alpine is ready --}}
+    {{-- 1. ANTI-FLASH STYLE --}}
     <style>
         [x-cloak] { display: none !important; }
     </style>
@@ -36,15 +36,22 @@
                         <x-nav-link :href="route('login')" :active="request()->routeIs('login')">Log In</x-nav-link>
                         <x-nav-link :href="route('register')" :active="request()->routeIs('register')">Sign Up</x-nav-link>
                     @else
-                        {{-- Shared Dashboard for all Roles --}}
+                        {{-- Shared Dashboard --}}
                         <x-nav-link :href="route('dashboard')" :active="request()->routeIs('dashboard')">Dashboard</x-nav-link>
 
-                        {{-- Staff/Admin Specific: Create Orders --}}
-                        @can('create orders')
+                        {{-- CUSTOMER ROLE: Explicit Booking Link --}}
+                        @role('CUSTOMER')
                             <x-nav-link :href="route('orders.create')" :active="request()->routeIs('orders.create')">
-                                {{ auth()->user()->hasRole('CUSTOMER') ? 'Book Now' : 'Walk-in' }}
+                                {{ __('Book Service') }}
                             </x-nav-link>
-                        @endcan
+                        @endrole
+
+                        {{-- STAFF/ADMIN ROLE: Walk-in Link --}}
+                        @hasanyrole('ADMIN|STAFF')
+                            <x-nav-link :href="route('orders.create')" :active="request()->routeIs('orders.create')">
+                                {{ __('Walk-in Order') }}
+                            </x-nav-link>
+                        @endhasanyrole
 
                         {{-- Admin Only: Staff Management --}}
                         @can('manage staff')
@@ -73,7 +80,7 @@
         </div>
     </div>
 
-    {{-- Dropdown Menu (Fixed with x-cloak to stop popping out on reload) --}}
+    {{-- Dropdown Menu --}}
     <div x-show="open" 
          x-cloak
          x-transition:enter="transition ease-out duration-200"
@@ -89,7 +96,7 @@
             @auth
                 {{-- Authenticated User Info --}}
                 <div class="flex items-center px-4 py-4 bg-gray-50 rounded-2xl mb-6">
-                    <div class="w-10 h-10 bg-gray-900 rounded-xl flex items-center justify-center text-white text-xs font-black shadow-lg shadow-gray-200">
+                    <div class="w-10 h-10 bg-gray-900 rounded-xl flex items-center justify-center text-white text-xs font-black shadow-lg shadow-gray-200 uppercase">
                         {{ substr(auth()->user()->name, 0, 1) }}
                     </div>
                     <div class="ml-3 overflow-hidden">
@@ -98,16 +105,25 @@
                     </div>
                 </div>
 
-                {{-- Navigation Links (Mobile Only) --}}
+                {{-- Navigation Links (Mobile Dropdown) --}}
                 <div class="lg:hidden space-y-1 mb-6 border-b border-gray-50 pb-6">
                     <p class="px-4 text-[9px] font-bold text-gray-400 uppercase tracking-[0.2em] mb-3">Navigation</p>
+                    
                     <a href="{{ route('dashboard') }}" class="block px-4 py-2.5 text-xs font-bold uppercase tracking-widest text-gray-600 hover:bg-gray-50 rounded-xl">Dashboard</a>
                     
-                    @can('create orders')
-                        <a href="{{ route('orders.create') }}" class="block px-4 py-2.5 text-xs font-bold uppercase tracking-widest text-gray-600 hover:bg-gray-50 rounded-xl">
-                            {{ auth()->user()->hasRole('CUSTOMER') ? 'Book Now' : 'Walk-in' }}
+                    {{-- Customer specific mobile link --}}
+                    @role('CUSTOMER')
+                        <a href="{{ route('orders.create') }}" class="block px-4 py-2.5 text-xs font-bold uppercase tracking-widest text-indigo-600 hover:bg-indigo-50 rounded-xl">
+                            Book Service
                         </a>
-                    @endcan
+                    @endrole
+
+                    {{-- Staff/Admin specific mobile link --}}
+                    @hasanyrole('ADMIN|STAFF')
+                        <a href="{{ route('orders.create') }}" class="block px-4 py-2.5 text-xs font-bold uppercase tracking-widest text-gray-600 hover:bg-gray-50 rounded-xl">
+                            Walk-in Order
+                        </a>
+                    @endhasanyrole
 
                     @can('manage staff')
                         <a href="{{ route('admin.staff.index') }}" class="block px-4 py-2.5 text-xs font-bold uppercase tracking-widest text-gray-600 hover:bg-gray-50 rounded-xl">Staff</a>
@@ -121,18 +137,17 @@
                 {{-- User Settings --}}
                 <div class="space-y-1">
                     <p class="px-4 text-[9px] font-bold text-gray-400 uppercase tracking-[0.2em] mb-3">System Access</p>
-                    <a href="{{ route('profile.edit') }}" class="flex items-center px-4 py-3 text-xs font-bold uppercase tracking-widest text-gray-600 hover:bg-gray-50 rounded-xl transition {{ request()->routeIs('profile.edit') ? 'bg-gray-50 text-gray-900' : '' }}">
+                    <a href="{{ route('profile.edit') }}" class="flex items-center px-4 py-3 text-xs font-bold uppercase tracking-widest text-gray-600 hover:bg-gray-50 rounded-xl transition">
                         Profile Settings
                     </a>
                     <form method="POST" action="{{ route('logout') }}">
                         @csrf
-                        <button type="submit" class="w-full text-left flex items-center px-4 py-3 text-xs font-bold uppercase tracking-widest text-rose-500 hover:bg-rose-50 rounded-xl transition">
+                        <button type="submit" class="w-full text-left flex items-center px-4 py-3 text-xs font-bold uppercase tracking-widest text-rose-500 hover:bg-rose-50 rounded-xl transition font-black">
                             Log Out
                         </button>
                     </form>
                 </div>
             @else
-                {{-- Guest Actions --}}
                 <div class="space-y-3">
                     <a href="{{ route('login') }}" class="block px-4 py-4 text-xs font-bold uppercase tracking-widest text-gray-600 hover:bg-gray-50 rounded-2xl text-center border border-gray-100">Log In</a>
                     <a href="{{ route('register') }}" class="block px-4 py-4 text-xs font-bold uppercase tracking-widest text-white bg-gray-900 rounded-2xl text-center shadow-lg shadow-gray-200">Sign Up Now</a>
