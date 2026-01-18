@@ -37,25 +37,19 @@ class OrderController extends Controller
         $authUser = Auth::user();
         
         // 1. Permission Check
-        if (!$authUser->hasAnyRole(['ADMIN', 'CUSTOMER']) && !$authUser->hasPermissionTo('create orders')) {
-            abort(403, 'You do not have permission to access the booking form.');
+        if (!$authUser->hasAnyRole(['ADMIN', 'STAFF', 'CUSTOMER']) && !$authUser->can('create orders')) {
+            abort(403);
         }
 
-        // 2. Fetch active services and addons for the dropdowns
         $services = MainService::where('is_active', true)->get();
         $addons = AddOn::where('is_active', true)->get();
 
-        // 3. Walk-in Customer Lookup (For Admins)
+        // 2. Walk-in Customer Lookup
         $foundUser = null;
-        if ($authUser->hasRole('ADMIN') && $request->filled('email')) {
-            $foundUser = User::where('email', $request->email)
-                ->whereHas('roles', function($q) {
-                    $q->where('name', 'CUSTOMER');
-                })
-                ->first();
+        if (($authUser->hasAnyRole(['ADMIN', 'STAFF'])) && $request->filled('email')) {
+            $foundUser = User::where('email', $request->email)->first();
         }
 
-        // 4. Return the view
         return view('orders.create', compact('services', 'addons', 'authUser', 'foundUser'));
     }
 
