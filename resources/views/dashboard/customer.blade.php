@@ -35,7 +35,6 @@
                         @php 
                             $isCancelled = $order->order_status === \App\Models\Order::STATUS_CANCELLED;
                         @endphp
-                        {{-- Row turns soft rose if cancelled to match Admin aesthetic --}}
                         <tr class="transition-all duration-300 {{ $isCancelled ? 'bg-rose-50/40' : 'hover:bg-slate-50/50' }}">
                             <td class="px-6 py-10 text-center">
                                 <span class="text-[11px] font-bold text-slate-400 uppercase tracking-widest block mb-2">#{{ $order->id }}</span>
@@ -102,7 +101,6 @@
 
                             <td class="px-6 py-10 text-center">
                                 <div class="flex flex-col gap-3 items-center justify-center min-w-[140px]">
-                                    {{-- SAFE serialization for Alpine tracking - Matches Staff Dashboard Style --}}
                                     <button type="button" 
                                             @click="selectedOrder = @js($order->load(['audits' => fn($q) => $q->orderBy('changed_at', 'desc'), 'payment', 'delivery'])); showDetails = true" 
                                             class="w-full text-[10px] font-medium text-indigo-500 uppercase tracking-widest py-2 px-4 bg-indigo-50/50 rounded-lg border border-indigo-100 hover:text-indigo-700 transition-all active:scale-95 shadow-sm">
@@ -139,7 +137,7 @@
             @endif
         </div>
 
-        {{-- Tracking Modal (Midnight style consistency) --}}
+        {{-- Tracking Modal --}}
         <x-tracking-modal x-show="showDetails" x-cloak>
             <div class="bg-[#121826] p-8 rounded-[2rem] mb-10 shadow-2xl relative overflow-hidden">
                 <div class="absolute top-0 right-0 p-6 opacity-5 text-white pointer-events-none">
