@@ -1,5 +1,5 @@
 <x-app-layout>
-    {{-- 1. ADD THIS STYLE: This is the ONLY way to prevent the "pop" on reload --}}
+    {{-- 1. ADD THIS STYLE: Prevent the "pop" on reload --}}
     <style>
         [x-cloak] { display: none !important; }
     </style>
@@ -25,9 +25,23 @@
     </x-slot>
 
     <div x-data="orderSystem()" class="py-8 px-4 md:px-10 max-w-[90rem] mx-auto space-y-10">
+        
+        {{-- NEW: SESSION SUCCESS ALERT --}}
+        @if(session('success'))
+            <div class="bg-emerald-50 border border-emerald-100 p-4 rounded-2xl flex items-center gap-3 animate-fade-in shadow-sm">
+                <div class="flex-shrink-0 bg-white p-1 rounded-full shadow-sm">
+                    <svg class="w-4 h-4 text-emerald-500" fill="currentColor" viewBox="0 0 20 20">
+                        <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/>
+                    </svg>
+                </div>
+                <span class="text-[10px] font-medium text-emerald-700 uppercase tracking-[0.1em]">
+                    {{ session('success') }}
+                </span>
+            </div>
+        @endif
+
         {{-- 1. Global Statistics Counters --}}
         <section class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 md:gap-6">
-            {{-- Directly using $stats from Controller --}}
             @foreach($stats as $stat)
                 <x-stat-card :label="strtoupper($stat['label'])" :value="$stat['value']" />
             @endforeach
@@ -140,7 +154,6 @@
                                 </div>
                             </td>
 
-                            {{-- LAUNDRY STATUS COLUMN: MAINTAINED STRICTLY --}}
                             <td class="px-2 py-4">
                                 <div class="flex flex-col items-center justify-between min-h-[140px] py-4">
                                     <span class="text-[9px] text-slate-400 font-medium uppercase italic tracking-widest"></span>
@@ -182,7 +195,7 @@
                                     <div class="flex flex-col items-center text-center">
                                         <span class="text-[9px] text-slate-400 font-medium uppercase italic tracking-widest">{{ str_replace('_', ' ', $order->delivery->delivery_method) }}</span>
                                         @if($order->delivery->scheduled_delivery_date)
-                                            <span class="mt-1 text-[8px] font-medium text-slate-500 uppercase tracking-tighter">On {{ $order->delivery->scheduled_delivery_date->format('M d, g:i A') }}</span>
+                                            <span class="mt-1 text-[8px] font-medium text-slate-500 uppercase tracking-tighter">On {{ \Carbon\Carbon::parse($order->delivery->scheduled_delivery_date)->format('M d, g:i A') }}</span>
                                         @endif
                                         @if(!$terminalState && $order->delivery->delivery_status !== 'DELIVERED')
                                             @can('update order status')
@@ -193,8 +206,6 @@
                                     <div class="w-full flex justify-center">
                                         <x-order-status-select :currentStatus="$order->delivery->delivery_status" :terminal="$terminalState" :options="['READY'=>'READY','DELIVERED'=>'DELIVERED']" @change="performUpdate('{{ route('orders.updateDelivery', $order->id) }}', { delivery_status: $el.value }, () => { window.location.reload() })" />
                                     </div>
-                                    
-                                    {{-- FIX: Added x-cloak here --}}
                                     <div x-show="showScheduleModal" x-cloak class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[10000] flex items-center justify-center p-4">
                                         <div @click.away="showScheduleModal = false" class="bg-white rounded-2xl p-6 w-full max-w-sm shadow-2xl border border-slate-100 text-left">
                                             <h4 class="text-sm font-medium uppercase italic tracking-widest text-slate-800 mb-4 uppercase border-b pb-2">SET DELIVERY DATE</h4>
@@ -241,41 +252,29 @@
         @if($orders->hasPages())
             <div class="mt-10 px-4">
                 <div class="flex flex-col md:flex-row justify-between items-center gap-6 bg-white p-6 rounded-[2rem] border border-slate-100 shadow-sm">
-                    
-                    {{-- 1. Custom Status Text (Left) --}}
                     <div class="text-[10px] font-medium text-slate-400 uppercase tracking-widest">
                         Showing <span class="text-slate-900">{{ $orders->firstItem() }}</span> 
                         to <span class="text-slate-900">{{ $orders->lastItem() }}</span> 
                         of <span class="text-slate-900">{{ $orders->total() }}</span> entries
                     </div>
-
-                    {{-- 2. Component-Based Navigation (Right) --}}
                     <div class="flex items-center gap-2">
                         @if ($orders->onFirstPage())
-                            <button disabled class="px-4 py-2 text-[10px] font-bold text-slate-300 uppercase tracking-widest bg-slate-50 rounded-xl cursor-not-allowed">
-                                Previous
-                            </button>
+                            <button disabled class="px-4 py-2 text-[10px] font-bold text-slate-300 uppercase tracking-widest bg-slate-50 rounded-xl cursor-not-allowed">Previous</button>
                         @else
-                            <x-secondary-button onclick="window.location='{{ $orders->previousPageUrl() }}'" class="!text-[10px] !font-bold !px-4 !py-2 !rounded-xl uppercase">
-                                Previous
-                            </x-secondary-button>
+                            <x-secondary-button onclick="window.location='{{ $orders->previousPageUrl() }}'" class="!text-[10px] !font-bold !px-4 !py-2 !rounded-xl uppercase">Previous</x-secondary-button>
                         @endif
 
                         @if ($orders->hasMorePages())
-                            <x-secondary-button onclick="window.location='{{ $orders->nextPageUrl() }}'" class="!text-[10px] !font-bold !px-4 !py-2 !rounded-xl uppercase">
-                                Next
-                            </x-secondary-button>
+                            <x-secondary-button onclick="window.location='{{ $orders->nextPageUrl() }}'" class="!text-[10px] !font-bold !px-4 !py-2 !rounded-xl uppercase">Next</x-secondary-button>
                         @else
-                            <button disabled class="px-4 py-2 text-[10px] font-bold text-slate-300 uppercase tracking-widest bg-slate-50 rounded-xl cursor-not-allowed">
-                                Next
-                            </button>
+                            <button disabled class="px-4 py-2 text-[10px] font-bold text-slate-300 uppercase tracking-widest bg-slate-50 rounded-xl cursor-not-allowed">Next</button>
                         @endif
                     </div>
                 </div>
             </div>
         @endif
 
-        {{-- FIX: Added x-cloak to these modals --}}
+        {{-- Modals --}}
         <x-customer-modal x-show="openModal" x-cloak>
             <div class="space-y-6 text-[11px] font-medium uppercase tracking-widest text-slate-500">
                 <div class="flex justify-between items-center"><span class="text-slate-300">E-MAIL:</span> <span x-text="customer.email" class="lowercase tracking-normal text-slate-700 uppercase"></span></div>
