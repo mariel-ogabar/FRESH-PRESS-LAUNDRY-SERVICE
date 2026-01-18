@@ -62,7 +62,6 @@
                 <div class="flex-1 flex flex-col gap-2">
                     <label class="text-[10px] font-medium text-slate-500 uppercase tracking-widest ml-1">Service Type</label>
                     <x-filter-select name="service" label="Select Service" onchange="this.form.submit()" class="w-full">
-                        <option value="">ALL SERVICES</option>
                         @foreach($mainServices as $service)
                             <option value="{{ $service->id }}" {{ request('service') == $service->id ? 'selected' : '' }}>{{ strtoupper($service->service_name) }}</option>
                         @endforeach
@@ -72,7 +71,6 @@
                 <div class="flex-1 flex flex-col gap-2">
                     <label class="text-[10px] font-medium text-slate-500 uppercase tracking-widest ml-1">Payment</label>
                     <x-filter-select name="payment_status" label="Select Status" onchange="this.form.submit()" class="w-full">
-                        <option value="">ALL PAYMENTS</option>
                         <option value="{{ \App\Models\Payment::STATUS_PENDING }}" {{ request('payment_status') == \App\Models\Payment::STATUS_PENDING ? 'selected' : '' }}>PENDING</option>
                         <option value="{{ \App\Models\Payment::STATUS_PAID }}" {{ request('payment_status') == \App\Models\Payment::STATUS_PAID ? 'selected' : '' }}>PAID</option>
                     </x-filter-select>
@@ -137,7 +135,7 @@
                                     <div class="flex flex-col items-center text-center">
                                         <span class="text-[9px] text-slate-400 font-medium uppercase italic tracking-widest">{{ str_replace('_', ' ', $order->collection->collection_method) }}</span>
                                         @if($order->collection->collection_method === 'STAFF_PICKUP' && $order->collection->collection_date)
-                                            <span class="mt-1 text-[8px] font-medium text-slate-500 uppercase tracking-tighter"> {{ \Carbon\Carbon::parse($order->collection->collection_date)->format('M d, g:i A') }}</span>
+                                            <span class="mt-1 text-[8px] font-medium text-slate-500 uppercase tracking-tighter">On {{ \Carbon\Carbon::parse($order->collection->collection_date)->format('M d, g:i A') }}</span>
                                         @endif
                                     </div>
                                     <div class="w-full flex justify-center">
@@ -147,7 +145,9 @@
                                             @can('update order status')
                                                 <x-order-status-select :currentStatus="$order->collection->collection_status" :options="[\App\Models\Collection::STATUS_PENDING => 'PENDING', \App\Models\Collection::STATUS_RECEIVED => 'RECEIVED']" @change="performUpdate('{{ route('orders.updateCollection', $order->id) }}', { collection_status: $el.value }, () => { window.location.reload() })" />
                                             @else
-                                                <span class="text-[11px] font-medium tracking-tight text-slate-700 uppercase">{{ $order->collection->collection_status }}</span>
+                                                <div class="bg-amber-50 text-amber-600 border border-amber-100 px-6 py-2 rounded-2xl text-[10px] font-bold uppercase tracking-widest shadow-sm">
+                                                    {{ $order->collection->collection_status }}
+                                                </div>
                                             @endcan
                                         @endif
                                     </div>
@@ -155,8 +155,8 @@
                             </td>
 
                             <td class="px-2 py-4">
-                                <div class="flex flex-col items-center justify-between min-h-[140px] py-4">
-                                    <span class="text-[9px] text-slate-400 font-medium uppercase italic tracking-widest"></span>
+                                <div class="flex flex-col items-center justify-between min-h-[140px] py-4 text-center">
+                                    <span class="text-[9px] text-slate-400 font-medium uppercase italic tracking-widest">PROGRESS</span>
                                     <div class="w-full flex justify-center">
                                         @if($terminalState)
                                             <x-order-status-select :currentStatus="$order->laundryStatus->current_status" :terminal="true" :options="[]" />
@@ -164,7 +164,14 @@
                                             @can('update order status')
                                                 <x-order-status-select :currentStatus="$order->laundryStatus->current_status" :terminal="false" :options="[\App\Models\LaundryStatus::PENDING => 'PENDING', \App\Models\LaundryStatus::WASHING => 'WASHING', \App\Models\LaundryStatus::DRYING => 'DRYING', \App\Models\LaundryStatus::FOLDING => 'FOLDING', \App\Models\LaundryStatus::IRONING => 'IRONING', \App\Models\LaundryStatus::READY => 'READY']" @change="performUpdate('{{ route('orders.updateStatus', $order->id) }}', { current_status: $el.value }, () => { window.location.reload() })" />
                                             @else
-                                                <span class="text-[11px] font-medium uppercase tracking-tight text-slate-700">{{ $order->laundryStatus->current_status }}</span>
+                                                @php
+                                                    $isReady = $order->laundryStatus->current_status === 'READY';
+                                                    $badgeStyle = $isReady ? 'bg-emerald-50 text-emerald-600 border-emerald-100' : 'bg-amber-50 text-amber-600 border-amber-100';
+                                                @endphp
+                                                <div class="{{ $badgeStyle }} px-6 py-2 rounded-2xl border text-[10px] font-bold uppercase tracking-widest flex items-center gap-2 shadow-sm">
+                                                    @if($isReady) <span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span> @endif
+                                                    {{ $order->laundryStatus->current_status }}
+                                                </div>
                                             @endcan
                                         @endif
                                     </div>
@@ -174,7 +181,7 @@
                             <td class="px-2 py-4">
                                 <div class="flex flex-col items-center justify-between min-h-[140px] py-4">
                                     <div class="flex flex-col items-center text-center">
-                                        <span class="text-[9px] text-slate-400 font-medium uppercase italic tracking-widest">Amount: Php {{ number_format($order->total_price, 2) }}</span>
+                                        <span class="text-[9px] text-slate-400 font-medium uppercase italic tracking-widest">PHP {{ number_format($order->total_price, 2) }}</span>
                                     </div>
                                     <div class="w-full flex justify-center">
                                         @if($terminalState)
@@ -183,7 +190,14 @@
                                             @can('process payments')
                                                 <x-order-status-select :currentStatus="$order->payment->payment_status" :options="[\App\Models\Payment::STATUS_PENDING => 'PENDING', \App\Models\Payment::STATUS_PAID => 'PAID']" @change="performUpdate('{{ route('orders.updatePayment', $order->id) }}', { payment_status: $el.value }, () => { window.location.reload(); })" />
                                             @else
-                                                <x-order-status-badge :status="$order->payment->payment_status" />
+                                                @php
+                                                    $isPaid = $order->payment->payment_status === 'PAID';
+                                                    $payStyle = $isPaid ? 'bg-emerald-50 text-emerald-600 border-emerald-100' : 'bg-amber-50 text-amber-600 border-amber-100';
+                                                @endphp
+                                                <div class="{{ $payStyle }} px-6 py-2 rounded-2xl border text-[10px] font-bold uppercase tracking-widest flex items-center gap-2 shadow-sm">
+                                                    @if($isPaid) <span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span> @endif
+                                                    {{ $order->payment->payment_status }}
+                                                </div>
                                             @endcan
                                         @endif
                                     </div>
@@ -204,7 +218,22 @@
                                         @endif
                                     </div>
                                     <div class="w-full flex justify-center">
-                                        <x-order-status-select :currentStatus="$order->delivery->delivery_status" :terminal="$terminalState" :options="['READY'=>'READY','DELIVERED'=>'DELIVERED']" @change="performUpdate('{{ route('orders.updateDelivery', $order->id) }}', { delivery_status: $el.value }, () => { window.location.reload() })" />
+                                        @if($terminalState)
+                                            <x-order-status-select :currentStatus="$order->delivery->delivery_status" :terminal="true" :options="[]" />
+                                        @else
+                                            @can('update order status')
+                                                <x-order-status-select :currentStatus="$order->delivery->delivery_status" :terminal="$terminalState" :options="['READY'=>'READY','DELIVERED'=>'DELIVERED']" @change="performUpdate('{{ route('orders.updateDelivery', $order->id) }}', { delivery_status: $el.value }, () => { window.location.reload() })" />
+                                            @else
+                                                @php
+                                                    $isDelivered = $order->delivery->delivery_status === 'DELIVERED' || $order->delivery->delivery_status === 'READY';
+                                                    $delStyle = $isDelivered ? 'bg-emerald-50 text-emerald-600 border-emerald-100' : 'bg-amber-50 text-amber-600 border-amber-100';
+                                                @endphp
+                                                <div class="{{ $delStyle }} px-6 py-2 rounded-2xl border text-[10px] font-bold uppercase tracking-widest flex items-center gap-2 shadow-sm">
+                                                    @if($isDelivered) <span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span> @endif
+                                                    {{ $order->delivery->delivery_status }}
+                                                </div>
+                                            @endcan
+                                        @endif
                                     </div>
                                     <div x-show="showScheduleModal" x-cloak class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[10000] flex items-center justify-center p-4">
                                         <div @click.away="showScheduleModal = false" class="bg-white rounded-2xl p-6 w-full max-w-sm shadow-2xl border border-slate-100 text-left">
