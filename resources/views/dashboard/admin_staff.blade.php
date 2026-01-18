@@ -1,4 +1,9 @@
 <x-app-layout>
+    {{-- 1. ADD THIS STYLE: This is the ONLY way to prevent the "pop" on reload --}}
+    <style>
+        [x-cloak] { display: none !important; }
+    </style>
+
     <x-slot name="header">
         <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 px-2 md:px-4">
             <div>
@@ -135,6 +140,7 @@
                                 </div>
                             </td>
 
+                            {{-- LAUNDRY STATUS COLUMN: MAINTAINED STRICTLY --}}
                             <td class="px-2 py-4">
                                 <div class="flex flex-col items-center justify-between min-h-[140px] py-4">
                                     <span class="text-[9px] text-slate-400 font-medium uppercase italic tracking-widest"></span>
@@ -187,6 +193,8 @@
                                     <div class="w-full flex justify-center">
                                         <x-order-status-select :currentStatus="$order->delivery->delivery_status" :terminal="$terminalState" :options="['READY'=>'READY','DELIVERED'=>'DELIVERED']" @change="performUpdate('{{ route('orders.updateDelivery', $order->id) }}', { delivery_status: $el.value }, () => { window.location.reload() })" />
                                     </div>
+                                    
+                                    {{-- FIX: Added x-cloak here --}}
                                     <div x-show="showScheduleModal" x-cloak class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[10000] flex items-center justify-center p-4">
                                         <div @click.away="showScheduleModal = false" class="bg-white rounded-2xl p-6 w-full max-w-sm shadow-2xl border border-slate-100 text-left">
                                             <h4 class="text-sm font-medium uppercase italic tracking-widest text-slate-800 mb-4 uppercase border-b pb-2">SET DELIVERY DATE</h4>
@@ -243,7 +251,6 @@
 
                     {{-- 2. Component-Based Navigation (Right) --}}
                     <div class="flex items-center gap-2">
-                        {{-- Previous Page Button --}}
                         @if ($orders->onFirstPage())
                             <button disabled class="px-4 py-2 text-[10px] font-bold text-slate-300 uppercase tracking-widest bg-slate-50 rounded-xl cursor-not-allowed">
                                 Previous
@@ -254,7 +261,6 @@
                             </x-secondary-button>
                         @endif
 
-                        {{-- Next Page Button --}}
                         @if ($orders->hasMorePages())
                             <x-secondary-button onclick="window.location='{{ $orders->nextPageUrl() }}'" class="!text-[10px] !font-bold !px-4 !py-2 !rounded-xl uppercase">
                                 Next
@@ -265,12 +271,12 @@
                             </button>
                         @endif
                     </div>
-
                 </div>
             </div>
         @endif
 
-        <x-customer-modal x-show="openModal">
+        {{-- FIX: Added x-cloak to these modals --}}
+        <x-customer-modal x-show="openModal" x-cloak>
             <div class="space-y-6 text-[11px] font-medium uppercase tracking-widest text-slate-500">
                 <div class="flex justify-between items-center"><span class="text-slate-300">E-MAIL:</span> <span x-text="customer.email" class="lowercase tracking-normal text-slate-700 uppercase"></span></div>
                 <div class="flex justify-between items-center"><span class="text-slate-300">CONTACT NO:</span> <span x-text="customer.phone" class="text-slate-700 uppercase"></span></div>
@@ -278,7 +284,7 @@
             </div>
         </x-customer-modal>
 
-        <x-tracking-modal x-show="showDetails">
+        <x-tracking-modal x-show="showDetails" x-cloak>
             <div class="bg-slate-50 p-6 md:p-8 rounded-2xl mb-10 space-y-4 border border-slate-100">
                 <h4 class="text-[10px] font-medium text-slate-400 uppercase tracking-[0.2em] mb-2 uppercase font-medium">Primary Milestones</h4>
                 <div class="flex justify-between items-center text-[11px] uppercase tracking-widest uppercase font-medium"><span class="text-slate-500">Payment:</span><span class="text-emerald-600 font-medium uppercase" x-text="selectedOrder.payment?.payment_date ? new Date(selectedOrder.payment.payment_date).toLocaleString() : 'Pending'"></span></div>
