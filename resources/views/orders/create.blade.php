@@ -11,24 +11,25 @@
         colMethod: 'DROP_OFF',
         retMethod: 'PICKUP',
 
-        // Tracks if the backend found a user with complete data
+        // New Logic State to track database values
         userFound: {{ $foundUser ? 'true' : 'false' }},
-        hasContact: {{ ($foundUser && $foundUser->contact_no) ? 'true' : 'false' }},
-        hasAddress: {{ ($foundUser && $foundUser->address) ? 'true' : 'false' }},
+        hasContact: {{ ($foundUser && $foundUser->contact_no) || (auth()->user()->hasRole('CUSTOMER') && auth()->user()->contact_no) ? 'true' : 'false' }},
+        hasAddress: {{ ($foundUser && $foundUser->address) || (auth()->user()->hasRole('CUSTOMER') && auth()->user()->address) ? 'true' : 'false' }},
 
         get needsLogistics() {
             return this.colMethod === 'STAFF_PICKUP' || this.retMethod === 'DELIVERY';
         },
 
-        // Logic: Show fields if user is new OR if logistics are needed but data is missing
-        showContactInput() {
-            if (!this.userFound) return true;
+        // Logic: Show Contact input if user is brand new OR if logistics are needed but contact is missing
+        get showContactInput() {
+            if (!this.userFound && !{{ auth()->user()->hasRole('CUSTOMER') ? 'true' : 'false' }}) return true;
             if (this.needsLogistics && !this.hasContact) return true;
             return false;
         },
 
-        showAddressInput() {
-            if (!this.userFound) return true;
+        // Logic: Show Address input if user is brand new OR if logistics are needed but address is missing
+        get showAddressInput() {
+            if (!this.userFound && !{{ auth()->user()->hasRole('CUSTOMER') ? 'true' : 'false' }}) return true;
             if (this.needsLogistics && !this.hasAddress) return true;
             return false;
         },
@@ -67,6 +68,7 @@
             </div>
         @endif
 
+        {{-- Walk-in Check Modal --}}
         <template x-if="showLookup">
             <div style="background: rgba(0,0,0,0.5); position: fixed; inset: 0; display: flex; align-items: center; justify-content: center; z-index: 100;">
                 <div style="background: white; padding: 20px; border: 1px solid #000;">
@@ -91,25 +93,24 @@
                     <p>Name: {{ auth()->user()->name }}</p>
                     <p>Email: {{ auth()->user()->email }}</p>
                     
-                    {{-- Check for missing data even for logged in customers --}}
-                    <div x-show="!showContactInput() && hasContact">
+                    {{-- Hidden inputs to pass existing data if fields are hidden --}}
+                    <div x-show="hasContact && !showContactInput">
                         <p>Contact: {{ auth()->user()->contact_no }}</p>
                         <input type="hidden" name="contact_no" value="{{ auth()->user()->contact_no }}">
                     </div>
-
-                    <div x-show="!showAddressInput() && hasAddress">
+                    <div x-show="hasAddress && !showAddressInput">
                         <p>Address: {{ auth()->user()->address }}</p>
                         <input type="hidden" name="address" value="{{ auth()->user()->address }}">
                     </div>
 
-                    <div x-show="showContactInput()">
+                    {{-- Form for missing or required logistics data --}}
+                    <div x-show="showContactInput">
                         <label>Contact #:</label>
-                        <input type="text" name="contact_no" :required="showContactInput()" placeholder="09123456789" class="border-black">
+                        <input type="text" name="contact_no" :required="showContactInput" placeholder="09123456789" class="border-black">
                     </div>
-
-                    <div x-show="showAddressInput()">
+                    <div x-show="showAddressInput">
                         <label>Address:</label>
-                        <input type="text" name="address" :required="showAddressInput()" placeholder="Street, City, Province" class="border-black">
+                        <input type="text" name="address" :required="showAddressInput" placeholder="Street, City, Province" class="border-black">
                     </div>
                 @else
                     {{-- Admin/Staff Walk-in Logic --}}
@@ -124,35 +125,29 @@
                         <p>Customer Found: <strong>{{ $foundUser->name }}</strong></p>
                         <input type="hidden" name="customer_name" value="{{ $foundUser->name }}">
                         
-                        <div x-show="!showContactInput() && hasContact">
+                        <div x-show="hasContact && !showContactInput">
                             <p>Contact: {{ $foundUser->contact_no }}</p>
                             <input type="hidden" name="contact_no" value="{{ $foundUser->contact_no }}">
                         </div>
-
-                        <div x-show="!showAddressInput() && hasAddress">
+                        <div x-show="hasAddress && !showAddressInput">
                             <p>Address: {{ $foundUser->address }}</p>
                             <input type="hidden" name="address" value="{{ $foundUser->address }}">
                         </div>
 
-                        {{-- Show inputs if missing or if logistics required and data empty --}}
-                        <div x-show="showContactInput()">
+                        <div x-show="showContactInput">
                             <label>Contact #:</label>
-                            <input type="text" name="contact_no" value="{{ old('contact_no', $foundUser->contact_no) }}" :required="showContactInput()" class="border-black">
+                            <input type="text" name="contact_no" value="{{ old('contact_no', $foundUser->contact_no) }}" :required="showContactInput" class="border-black">
                         </div>
-
-                        <div x-show="showAddressInput()">
+                        <div x-show="showAddressInput">
                             <label>Address:</label>
-                            <input type="text" name="address" value="{{ old('address', $foundUser->address) }}" :required="showAddressInput()" class="border-black">
+                            <input type="text" name="address" value="{{ old('address', $foundUser->address) }}" :required="showAddressInput" class="border-black">
                         </div>
                     @else
-                        {{-- New Walk-in Customer --}}
-                        <p><em>New Customer detected. Please fill in details:</em></p>
+                        {{-- Completely New Customer --}}
                         <label>Full Name:</label>
                         <input type="text" name="customer_name" required placeholder="Enter Name" class="border-black"><br>
-                        
                         <label>Contact #:</label>
                         <input type="text" name="contact_no" :required="needsLogistics" placeholder="Enter Contact Number" class="border-black"><br>
-                        
                         <label>Address:</label>
                         <input type="text" name="address" :required="needsLogistics" placeholder="Enter Address" class="border-black">
                     @endif
@@ -223,13 +218,14 @@
                     </ul>
                 </div>
 
-                <div x-show="needsLogistics && (!hasContact || !hasAddress)" style="color: red; font-size: 0.85em; margin-bottom: 10px;">
-                    ⚠ Logistics selected: Contact and Address must be provided above.
+                {{-- Alert for missing info when logistics are selected --}}
+                <div x-show="needsLogistics && (!hasContact || !hasAddress)" style="color: red; font-size: 0.85em; margin-bottom: 10px; font-weight: bold;">
+                    ⚠ Missing Details: Please provide contact and address above for logistics processing.
                 </div>
 
                 <h2>Total: <span x-text="'₱' + totalPrice.toLocaleString(undefined, {minimumFractionDigits: 2})">₱0.00</span></h2>
                 
-                <button type="submit" style="padding: 10px 20px; font-weight: bold;">
+                <button type="submit" style="padding: 10px 20px; font-weight: bold; background: black; color: white; cursor: pointer;">
                     CONFIRM BOOKING
                 </button>
             </div>

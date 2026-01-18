@@ -81,29 +81,36 @@ class OrderController extends Controller
         return DB::transaction(function () use ($request, $authUser) {
             $validated = $request->validated();
 
+            // 1. Resolve the Customer
+            // If Admin/Staff, use the service logic (which now handles the duplicates/updates)
+            // If Customer, use the authenticated user directly
             if ($authUser->hasAnyRole(['ADMIN', 'STAFF']) || $authUser->can('create orders')) {
                 $customer = $this->orderService->getOrCreateCustomer($validated);
-                
-                $customer->update([
-                    'contact_no' => $validated['contact_no'] ?? $customer->contact_no,
-                    'address'    => $validated['address'] ?? $customer->address,
-                ]);
             } else {
                 $customer = $authUser;
+                
+                // Optional: Update logged-in customer info if they filled out missing fields
+                $customer->update(array_filter([
+                    'contact_no' => $validated['contact_no'] ?? null,
+                    'address'    => $validated['address'] ?? null,
+                ]));
             }
 
+            // 2. Calculate Financials
             $totalPrice = $this->orderService->calculateTotal(
                 $validated['service_id'],
                 (float) $validated['load_size'],
                 $validated['addons'] ?? []
             );
 
+            // 3. Create the Main Order
             $order = Order::create([
                 'user_id' => $customer->id,
                 'total_price' => $totalPrice,
                 'order_status' => Order::STATUS_ACTIVE,
             ]);
 
+            // 4. Attach Service and Add-ons
             $addonPricesSum = isset($validated['addons'])
                 ? AddOn::whereIn('id', $validated['addons'])->sum('addon_price')
                 : 0;
@@ -116,15 +123,16 @@ class OrderController extends Controller
             ]);
 
             if (!empty($validated['addons'])) {
-                foreach ($validated['addons'] as $addonId) {
-                    $addon = AddOn::find($addonId);
-                    $orderService->addons()->attach($addonId, [
+                $addons = AddOn::whereIn('id', $validated['addons'])->get();
+                foreach ($addons as $addon) {
+                    $orderService->addons()->attach($addon->id, [
                         'addon_qty'   => 1,
                         'addon_price' => $addon->addon_price
                     ]);
                 }
             }
 
+            // 5. Initialize Logistics, Payment, and Status records
             $this->initializeOrderDetails($order, $request);
 
             return redirect()->route('dashboard')->with('success', 'Booking Confirmed! Order #' . $order->id);
