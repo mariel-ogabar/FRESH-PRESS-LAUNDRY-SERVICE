@@ -8,12 +8,29 @@
         unit: 'kg',
         selectedAddons: [],
         
-        // NEW: Logistics tracking for conditional requirement
         colMethod: 'DROP_OFF',
         retMethod: 'PICKUP',
 
+        // Tracks if the backend found a user with complete data
+        userFound: {{ $foundUser ? 'true' : 'false' }},
+        hasContact: {{ ($foundUser && $foundUser->contact_no) ? 'true' : 'false' }},
+        hasAddress: {{ ($foundUser && $foundUser->address) ? 'true' : 'false' }},
+
         get needsLogistics() {
             return this.colMethod === 'STAFF_PICKUP' || this.retMethod === 'DELIVERY';
+        },
+
+        // Logic: Show fields if user is new OR if logistics are needed but data is missing
+        showContactInput() {
+            if (!this.userFound) return true;
+            if (this.needsLogistics && !this.hasContact) return true;
+            return false;
+        },
+
+        showAddressInput() {
+            if (!this.userFound) return true;
+            if (this.needsLogistics && !this.hasAddress) return true;
+            return false;
         },
 
         updateBasePrice(el) {
@@ -74,22 +91,26 @@
                     <p>Name: {{ auth()->user()->name }}</p>
                     <p>Email: {{ auth()->user()->email }}</p>
                     
-                    {{-- If user has data, show it and send it via hidden inputs --}}
-                    @if(auth()->user()->contact_no && auth()->user()->address)
+                    {{-- Check for missing data even for logged in customers --}}
+                    <div x-show="!showContactInput() && hasContact">
                         <p>Contact: {{ auth()->user()->contact_no }}</p>
-                        <p>Address: {{ auth()->user()->address }}</p>
-                        
                         <input type="hidden" name="contact_no" value="{{ auth()->user()->contact_no }}">
+                    </div>
+
+                    <div x-show="!showAddressInput() && hasAddress">
+                        <p>Address: {{ auth()->user()->address }}</p>
                         <input type="hidden" name="address" value="{{ auth()->user()->address }}">
-                    @else
-                        {{-- If data is missing, show required inputs --}}
-                        <p style="color: blue;"><em>Please provide your missing details to proceed:</em></p>
+                    </div>
+
+                    <div x-show="showContactInput()">
                         <label>Contact #:</label>
-                        <input type="text" name="contact_no" :required="needsLogistics" placeholder="09123456789" class="border-black"><br>
-                        
+                        <input type="text" name="contact_no" :required="showContactInput()" placeholder="09123456789" class="border-black">
+                    </div>
+
+                    <div x-show="showAddressInput()">
                         <label>Address:</label>
-                        <input type="text" name="address" :required="needsLogistics" placeholder="Street, City, Province" class="border-black">
-                    @endif
+                        <input type="text" name="address" :required="showAddressInput()" placeholder="Street, City, Province" class="border-black">
+                    </div>
                 @else
                     {{-- Admin/Staff Walk-in Logic --}}
                     <input type="hidden" name="email" value="{{ request('email') }}">
@@ -103,31 +124,41 @@
                         <p>Customer Found: <strong>{{ $foundUser->name }}</strong></p>
                         <input type="hidden" name="customer_name" value="{{ $foundUser->name }}">
                         
-                        {{-- Even for Admin, if the found user has no data, show the inputs --}}
-                        @if(!$foundUser->contact_no || !$foundUser->address)
-                            <p style="color: red;"><em>Customer record incomplete. Please update:</em></p>
-                            <label>Contact #:</label>
-                            <input type="text" name="contact_no" value="{{ old('contact_no', $foundUser->contact_no) }}" :required="needsLogistics" class="border-black"><br>
-                            <label>Address:</label>
-                            <input type="text" name="address" value="{{ old('address', $foundUser->address) }}" :required="needsLogistics" class="border-black">
-                        @else
+                        <div x-show="!showContactInput() && hasContact">
                             <p>Contact: {{ $foundUser->contact_no }}</p>
-                            <p>Address: {{ $foundUser->address }}</p>
                             <input type="hidden" name="contact_no" value="{{ $foundUser->contact_no }}">
+                        </div>
+
+                        <div x-show="!showAddressInput() && hasAddress">
+                            <p>Address: {{ $foundUser->address }}</p>
                             <input type="hidden" name="address" value="{{ $foundUser->address }}">
-                        @endif
+                        </div>
+
+                        {{-- Show inputs if missing or if logistics required and data empty --}}
+                        <div x-show="showContactInput()">
+                            <label>Contact #:</label>
+                            <input type="text" name="contact_no" value="{{ old('contact_no', $foundUser->contact_no) }}" :required="showContactInput()" class="border-black">
+                        </div>
+
+                        <div x-show="showAddressInput()">
+                            <label>Address:</label>
+                            <input type="text" name="address" value="{{ old('address', $foundUser->address) }}" :required="showAddressInput()" class="border-black">
+                        </div>
                     @else
                         {{-- New Walk-in Customer --}}
                         <p><em>New Customer detected. Please fill in details:</em></p>
                         <label>Full Name:</label>
                         <input type="text" name="customer_name" required placeholder="Enter Name" class="border-black"><br>
+                        
                         <label>Contact #:</label>
                         <input type="text" name="contact_no" :required="needsLogistics" placeholder="Enter Contact Number" class="border-black"><br>
+                        
                         <label>Address:</label>
                         <input type="text" name="address" :required="needsLogistics" placeholder="Enter Address" class="border-black">
                     @endif
                 @endhasrole
             </fieldset>
+
             <fieldset>
                 <legend>Service Details</legend>
                 <select name="service_id" required @change="updateBasePrice($el)">
@@ -192,7 +223,7 @@
                     </ul>
                 </div>
 
-                <div x-show="needsLogistics" style="color: red; font-size: 0.85em; margin-bottom: 10px;">
+                <div x-show="needsLogistics && (!hasContact || !hasAddress)" style="color: red; font-size: 0.85em; margin-bottom: 10px;">
                     ⚠ Logistics selected: Contact and Address must be provided above.
                 </div>
 
