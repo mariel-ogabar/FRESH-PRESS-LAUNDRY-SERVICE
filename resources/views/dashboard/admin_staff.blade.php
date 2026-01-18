@@ -1,356 +1,308 @@
 <x-app-layout>
-    <div x-data="orderSystem()">
-        <x-slot name="header">
+    <x-slot name="header">
+        <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 px-2 md:px-4">
             <div>
-                <h1>
-                    {{-- Updated to Spatie hasRole --}}
-                    {{ auth()->user()->hasRole('ADMIN') ? 'Admin Dashboard' : 'Staff Dashboard' }}
-                </h1>
-                <p>Manage all Customer orders</p>
-                
-                {{-- Updated to check permission --}}
-                @can('create orders')
-                    <a href="{{ route('orders.create') }}">
-                        + Add walk-in
-                    </a>
-                @endcan
+                <h2 class="font-medium text-xl text-slate-800 uppercase tracking-tighter">
+                    {{ auth()->user()->hasRole('ADMIN') ? __('Admin Dashboard') : __('Staff Dashboard') }}
+                </h2>
+                <p class="text-[11px] font-medium text-slate-500 uppercase tracking-widest mt-1">
+                    {{ __('Order Operations & Inventory Control') }}
+                </p>
             </div>
-        </x-slot>
 
-        <div>
-            <div>
-                <section>
-                    @php
-                        $stats = [
-                            ['label' => 'Total Orders', 'value' => $orders->count()],
-                            ['label' => 'Pending', 'value' => $orders->where('laundryStatus.current_status', \App\Models\LaundryStatus::PENDING)->count()],
-                            ['label' => 'In Progress', 'value' => $orders->whereIn('laundryStatus.current_status', [\App\Models\LaundryStatus::WASHING, \App\Models\LaundryStatus::DRYING, \App\Models\LaundryStatus::FOLDING, \App\Models\LaundryStatus::IRONING])->count()],
-                            ['label' => 'Ready', 'value' => $orders->where('laundryStatus.current_status', \App\Models\LaundryStatus::READY)->count()],
-                            ['label' => 'Paid Sales', 'value' => 'Php ' . number_format($orders->where('payment.payment_status', \App\Models\Payment::STATUS_PAID)->sum('total_price'), 2)],
-                            ['label' => 'To be Paid', 'value' => 'Php ' . number_format($orders->where('payment.payment_status', \App\Models\Payment::STATUS_PENDING)->sum('total_price'), 2)],
-                        ];
-                    @endphp
-
-                    @foreach($stats as $stat)
-                        <div>
-                            <span>{{ $stat['label'] }}</span>
-                            <h3>{{ $stat['value'] }}</h3>
-                        </div>
-                    @endforeach
-                </section>
-
-                <nav>
-                    <form action="{{ route('dashboard') }}" method="GET">
-                        <select name="status" onchange="this.form.submit()">
-                            <option value="">All Status</option>
-                            <option value="{{ \App\Models\Order::STATUS_ACTIVE }}" {{ request('status') == \App\Models\Order::STATUS_ACTIVE ? 'selected' : '' }}>Active</option>
-                            <option value="{{ \App\Models\Order::STATUS_COMPLETED }}" {{ request('status') == \App\Models\Order::STATUS_COMPLETED ? 'selected' : '' }}>Completed</option>
-                            <option value="{{ \App\Models\Order::STATUS_CANCELLED }}" {{ request('status') == \App\Models\Order::STATUS_CANCELLED ? 'selected' : '' }}>Cancelled</option>
-                        </select>
-
-                        <select name="service" onchange="this.form.submit()">
-                            <option value="">All Services</option>
-                            @foreach($mainServices as $service)
-                                <option value="{{ $service->id }}" {{ request('service') == $service->id ? 'selected' : '' }}>
-                                    {{ $service->service_name }}
-                                </option>
-                            @endforeach
-                        </select>
-
-                        <select name="payment" onchange="this.form.submit()">
-                            <option value="">All Payment</option>
-                            <option value="{{ \App\Models\Payment::STATUS_PENDING }}" {{ request('payment') == \App\Models\Payment::STATUS_PENDING ? 'selected' : '' }}>Pending</option>
-                            <option value="{{ \App\Models\Payment::STATUS_PAID }}" {{ request('payment') == \App\Models\Payment::STATUS_PAID ? 'selected' : '' }}>Paid</option>
-                        </select>
-
-                        @if(request()->anyFilled(['status', 'service', 'payment']))
-                            <a href="{{ route('dashboard') }}">Clear Filters</a>
-                        @endif
-                    </form>
-                </nav>
-
-                <main>
-                    <table>
-                        <thead>
-                            <tr>
-                                <th>ID</th>
-                                <th>Customer</th>
-                                <th>Service Details</th>
-                                <th>Collection</th>
-                                <th>Laundry Status</th>
-                                <th>Payment</th>
-                                <th>Delivery</th>
-                                <th>Actions</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            @forelse($orders as $order)
-                                <tr>
-                                    <td>#{{ $order->id }}</td>
-                                    
-                                    <td>
-                                        <button type="button" @click="customer = { 
-                                            name: '{{ $order->user->name }}', 
-                                            email: '{{ $order->user->email }}', 
-                                            phone: '{{ $order->user->contact_no ?? 'N/A' }}', 
-                                            address: '{{ $order->user->address ?? 'N/A' }}' 
-                                        }; openModal = true" style="background: none; border: none; color: blue; text-decoration: underline; cursor: pointer;">
-                                            {{ $order->user->name }}
-                                        </button>
-                                    </td>
-
-                                    <td>
-                                        @if($order->services->isNotEmpty() && $order->services->first()->mainService)
-                                            <strong>{{ $order->services->first()->mainService->service_name }}</strong>
-                                            <br>
-                                            @php
-                                                $mainService = $order->services->first()->mainService;
-                                                $serviceName = strtoupper($mainService->service_name);
-                                                $isPerPiece = str_contains($serviceName, 'DRY CLEAN') || str_contains($serviceName, 'STAIN');
-                                                $unit = $isPerPiece ? 'pcs' : ($mainService->unit ?? 'kg');
-                                            @endphp
-                                            <span>{{ $order->services->first()->quantity }} {{ $unit }}</span>
-                                        @else
-                                            <span class="text-red-500 italic">No Service Linked</span>
-                                        @endif
-                                        
-                                        {{-- Add-ons display --}}
-                                        <div>
-                                            @foreach($order->services as $service)
-                                                @foreach($service->addons as $addon)
-                                                    <span class="text-xs text-gray-500">+ {{ $addon->addon_name }}</span>
-                                                @endforeach
-                                            @endforeach
-                                        </div>
-                                    </td>
-
-                                    <td>
-                                        <div x-data="{ colStatus: '{{ $order->collection->collection_status }}' }">
-                                            <div style="margin-bottom: 5px;">
-                                                <strong style="font-size: 10px; text-transform: uppercase;">
-                                                    {{ str_replace('_', ' ', $order->collection->collection_method) }}
-                                                </strong>
-                                            </div>
-
-                                            @can('update order status') {{-- Consistent permission name --}}
-                                                <select x-model="colStatus" 
-                                                        @change="performUpdate('{{ route('orders.updateCollection', $order->id) }}', { collection_status: $el.value }, () => { window.dispatchEvent(new CustomEvent('col-updated-{{ $order->id }}', { detail: $el.value })) })" 
-                                                        style="font-size: 11px;">
-                                                    <option value="{{ \App\Models\Collection::STATUS_PENDING }}">PENDING</option>
-                                                    <option value="{{ \App\Models\Collection::STATUS_RECEIVED }}">RECEIVED</option>
-                                                </select>
-                                            @else
-                                                <span style="font-size: 11px;">{{ $order->collection->collection_status }}</span>
-                                            @endcan
-                                        </div>
-                                    </td>
-
-                                    <td style="padding: 16px;">
-                                        <div x-data="{ 
-                                            lauStatus: '{{ $order->laundryStatus->current_status }}',
-                                            isClickable: '{{ $order->collection->collection_status }}' === '{{ \App\Models\Collection::STATUS_RECEIVED }}'
-                                        }" 
-                                        @col-updated-{{ $order->id }}.window="isClickable = ($event.detail === '{{ \App\Models\Collection::STATUS_RECEIVED }}')">
-                                            
-                                            @can('update order status') {{-- Matches the others now --}}
-                                                <select x-model="lauStatus" 
-                                                        @change="performUpdate('{{ route('orders.updateStatus', $order->id) }}', { current_status: $el.value }, () => { window.location.reload() })" 
-                                                        :disabled="!isClickable" 
-                                                        style="font-size: 11px; font-weight: bold; width: 100%; display: block;"
-                                                        :style="!isClickable ? 'opacity: 0.5; cursor: not-allowed;' : 'cursor: pointer; background: #fff; border: 1px solid #000;'">
-                                                    
-                                                    <option value="{{ \App\Models\LaundryStatus::PENDING }}">PENDING</option>
-                                                    <option value="{{ \App\Models\LaundryStatus::WASHING }}">WASHING</option>
-                                                    <option value="{{ \App\Models\LaundryStatus::DRYING }}">DRYING</option>
-                                                    <option value="{{ \App\Models\LaundryStatus::FOLDING }}">FOLDING</option>
-                                                    <option value="{{ \App\Models\LaundryStatus::IRONING }}">IRONING</option>
-                                                    <option value="{{ \App\Models\LaundryStatus::READY }}">READY</option>
-                                                </select>
-
-                                                <template x-if="!isClickable">
-                                                    <div style="font-size: 9px; color: #dc2626; margin-top: 4px;">Receive items first</div>
-                                                </template>
-                                            @else
-                                                <span style="font-size: 11px; font-weight: bold;">{{ $order->laundryStatus->current_status }}</span>
-                                            @endcan
-                                        </div>
-                                    </td>
-
-                                    <td>
-                                        <div x-data="{ payStatus: '{{ $order->payment->payment_status }}' }">
-                                            <strong>Php {{ number_format($order->total_price, 2) }}</strong>
-                                            
-                                            {{-- Admin check or specific permission --}}
-                                            @can('process payments')
-                                                <select x-model="payStatus" 
-                                                        @change="performUpdate('{{ route('orders.updatePayment', $order->id) }}', { payment_status: $el.value }, () => { window.location.reload(); })" 
-                                                        style="font-size: 11px; display: block; width: 100%; margin-top: 4px;">
-                                                    <option value="{{ \App\Models\Payment::STATUS_PENDING }}">PENDING</option>
-                                                    <option value="{{ \App\Models\Payment::STATUS_PAID }}">PAID</option>
-                                                </select>
-                                            @else
-                                                <div style="margin-top: 4px;">
-                                                    <x-order-status-badge :status="$order->payment->payment_status" class="block mt-1" />
-                                                </div>
-                                            @endcan
-                                        </div>
-                                    </td>
-
-                                    <td x-data="{ 
-                                        showScheduleModal: false, 
-                                        scheduledDate: '{{ $order->delivery->scheduled_delivery_date ? $order->delivery->scheduled_delivery_date->format('Y-m-d\TH:i') : '' }}' 
-                                    }">
-                                        <div class="flex flex-col space-y-2">
-                                            {{-- Delivery Method Label --}}
-                                            <strong style="font-size: 10px; text-transform: uppercase; color: #6b7280;">
-                                                {{ str_replace('_', ' ', $order->delivery->delivery_method) }}
-                                            </strong>
-
-                                            {{-- Permission Check: Dapat tugma sa Seeder mo --}}
-                                            @can('update order status')
-                                                <select @change="performUpdate('{{ route('orders.updateDelivery', $order->id) }}', { delivery_status: $el.value }, () => { window.location.reload() })"
-                                                        style="font-size: 11px; padding: 2px;" class="border rounded">
-                                                    <option value="READY" {{ $order->delivery->delivery_status == 'READY' ? 'selected' : '' }}>READY</option>
-                                                    <option value="DELIVERED" {{ $order->delivery->delivery_status == 'DELIVERED' ? 'selected' : '' }}>DELIVERED</option>
-                                                </select>
-
-                                                @if($order->delivery->delivery_status !== 'DELIVERED')
-                                                    <button @click="showScheduleModal = true" 
-                                                            style="font-size: 9px; padding: 2px 5px; cursor: pointer; border: 1px solid #ddd; background: #f9f9f9;">
-                                                        {{ $order->delivery->scheduled_delivery_date ? 'Change Sched' : 'Set Sched' }}
-                                                    </button>
-                                                @endif
-                                            @else
-                                                {{-- Kung walang permission, text lang ang makikita --}}
-                                                <span style="font-size: 11px; font-weight: bold; color: #374151;">
-                                                    {{ $order->delivery->delivery_status }}
-                                                </span>
-                                                @if($order->delivery->scheduled_delivery_date)
-                                                    <small style="font-size: 9px; color: #6b7280;">
-                                                        Sched: {{ $order->delivery->scheduled_delivery_date->format('M d, g:i A') }}
-                                                    </small>
-                                                @endif
-                                            @endcan
-                                        </div>
-
-                                        {{-- Schedule Modal --}}
-                                        <div x-show="showScheduleModal" 
-                                            x-transition
-                                            style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.5); z-index: 10000; display: flex; align-items: center; justify-content: center;">
-                                            <div @click.away="showScheduleModal = false" style="background:white; padding:20px; border-radius: 8px; width: 300px; box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1);">
-                                                <h4 style="margin-bottom: 10px; font-weight: bold;">Set Delivery Date</h4>
-                                                <input type="datetime-local" x-model="scheduledDate" style="width: 100%; border: 1px solid #ccc; padding: 5px; margin-bottom: 10px;">
-                                                <div style="display: flex; justify-content: flex-end; gap: 10px;">
-                                                    <button @click="showScheduleModal = false" style="font-size: 11px; color: #6b7280;">Cancel</button>
-                                                    <button @click="performUpdate('{{ route('orders.setDeliverySchedule', $order->id) }}', { scheduled_date: scheduledDate }, () => { window.location.reload() })" 
-                                                            style="background: #4f46e5; color: white; padding: 5px 10px; border: none; border-radius: 4px; cursor: pointer; font-size: 11px;">
-                                                        Save Schedule
-                                                    </button>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </td>
-                                    <td>
-                                        <button type="button" 
-                                                @click="selectedOrder = { audits: [] }; 
-                                                        selectedOrder = {{ $order->toJson() }}; 
-                                                        showDetails = true">
-                                            View Tracking
-                                        </button>
-                                        @if($order->isCancellable())
-                                            {{-- This checks the Policy 'cancel' method --}}
-                                            @can('cancel any order', $order)
-                                                <form action="{{ route('orders.cancel', $order->id) }}" method="POST" style="display:inline;">
-                                                    @csrf 
-                                                    @method('PATCH')
-                                                    <button type="submit" 
-                                                            class="text-red-600 hover:text-red-900 font-bold underline" 
-                                                            onclick="return confirm('Are you sure you want to cancel this order?')">
-                                                        CANCEL
-                                                    </button>
-                                                </form>
-                                            @endcan
-                                        @endif
-
-                                        @if($order->order_status !== \App\Models\Order::STATUS_ACTIVE)
-                                            <span>{{ $order->order_status }}</span>
-                                        @endif
-                                    </td>
-                                </tr>
-                            @empty
-                                <tr><td colspan="8">No Orders Found</td></tr>
-                            @endforelse
-                        </tbody>
-                    </table>
-                </main>
-            </div>
+            @can('create orders')
+                <x-primary-button onclick="window.location='{{ route('orders.create') }}'" 
+                    class="!bg-[#475569] hover:!bg-[#334155] !text-white !font-medium px-6 py-2.5 rounded-full shadow-lg transition-all active:scale-95 text-center justify-center uppercase">
+                    {{ __('+ ADD WALK-IN') }}
+                </x-primary-button>
+            @endcan
         </div>
+    </x-slot>
 
-        <div x-show="openModal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.5); z-index: 9999; display: flex; align-items: center; justify-content: center;">
-            <div @click.away="openModal = false" style="background:white; padding:20px; border-radius: 8px; width: 300px; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
-                <h3 x-text="customer.name" style="font-weight: bold; font-size: 18px; margin-bottom: 10px;"></h3>
-                <p><strong>Email:</strong> <span x-text="customer.email"></span></p>
-                <p><strong>Phone:</strong> <span x-text="customer.phone"></span></p>
-                <p><strong>Address:</strong> <span x-text="customer.address"></span></p>
-                <button @click="openModal = false" style="margin-top: 15px; width: 100%; background: #333; color: white; padding: 5px; cursor: pointer;">Close</button>
-            </div>
-        </div>
+    <div x-data="orderSystem()" class="py-8 px-4 md:px-10 max-w-[90rem] mx-auto space-y-10">
+        {{-- 1. Global Statistics Counters --}}
+        <section class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 md:gap-6">
+            {{-- Directly using $stats from Controller --}}
+            @foreach($stats as $stat)
+                <x-stat-card :label="strtoupper($stat['label'])" :value="$stat['value']" />
+            @endforeach
+        </section>
 
-        <div x-show="showDetails" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.5); z-index: 9999; display: flex; align-items: center; justify-content: center;">
-            <div @click.away="showDetails = false" style="background:white; padding:25px; border-radius: 12px; width: 480px; max-height: 85vh; overflow-y: auto; box-shadow: 0 20px 25px -5px rgba(0,0,0,0.1);">
-                <h3 style="font-weight: bold; font-size: 20px; margin-bottom: 20px; border-bottom: 2px solid #f3f4f6; padding-bottom: 10px;">
-                    Tracking #<span x-text="selectedOrder.id"></span>
-                </h3>
-
-                <div style="background: #f8fafc; padding: 15px; border-radius: 8px; margin-bottom: 20px;">
-                    <h4 style="font-size: 11px; color: #64748b; text-transform: uppercase; letter-spacing: 0.05em; font-weight: bold; margin-bottom: 10px;">Timestamps</h4>
-                    
-                    <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
-                        <span style="font-size: 13px; color: #475569;">Payment Received:</span>
-                        <span style="font-size: 13px; font-weight: bold; color: #059669;" 
-                            x-text="selectedOrder.payment.payment_date ? new Date(selectedOrder.payment.payment_date).toLocaleString() : 'Pending'"></span>
-                    </div>
-
-                    <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
-                        <span style="font-size: 13px; color: #475569;">Target Schedule:</span>
-                        <span style="font-size: 13px; font-weight: bold; color: #2563eb;" 
-                            x-text="selectedOrder.delivery.scheduled_delivery_date ? new Date(selectedOrder.delivery.scheduled_delivery_date).toLocaleString() : 'Not set'"></span>
-                    </div>
-
-                    <div style="display: flex; justify-content: space-between;">
-                        <span style="font-size: 13px; color: #475569;">Actual Delivery:</span>
-                        <span style="font-size: 13px; font-weight: bold; color: #4f46e5;" 
-                            x-text="selectedOrder.delivery.delivered_date ? new Date(selectedOrder.delivery.delivered_date).toLocaleString() : 'In process'"></span>
-                    </div>
+        {{-- 2. Advanced Filters --}}
+        <nav class="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
+            <form action="{{ route('dashboard') }}" method="GET" class="flex flex-col md:flex-row items-stretch md:items-end gap-6">
+                <div class="flex-1 flex flex-col gap-2">
+                    <label class="text-[10px] font-medium text-slate-500 uppercase tracking-widest ml-1">Order Status</label>
+                    <x-filter-select name="status" label="Select Status" onchange="this.form.submit()" class="w-full">
+                        <option value="{{ \App\Models\Order::STATUS_ACTIVE }}" {{ request('status') == \App\Models\Order::STATUS_ACTIVE ? 'selected' : '' }}>ACTIVE</option>
+                        <option value="{{ \App\Models\Order::STATUS_COMPLETED }}" {{ request('status') == \App\Models\Order::STATUS_COMPLETED ? 'selected' : '' }}>COMPLETED</option>
+                        <option value="{{ \App\Models\Order::STATUS_CANCELLED }}" {{ request('status') == \App\Models\Order::STATUS_CANCELLED ? 'selected' : '' }}>CANCELLED</option>
+                    </x-filter-select>
                 </div>
 
-                <h4 style="font-size: 11px; color: #64748b; text-transform: uppercase; font-weight: bold; margin-bottom: 15px;">Progress History</h4>
+                <div class="flex-1 flex flex-col gap-2">
+                    <label class="text-[10px] font-medium text-slate-500 uppercase tracking-widest ml-1">Service Type</label>
+                    <x-filter-select name="service" label="Select Service" onchange="this.form.submit()" class="w-full">
+                        <option value="">ALL SERVICES</option>
+                        @foreach($mainServices as $service)
+                            <option value="{{ $service->id }}" {{ request('service') == $service->id ? 'selected' : '' }}>{{ strtoupper($service->service_name) }}</option>
+                        @endforeach
+                    </x-filter-select>
+                </div>
 
-                <template x-for="audit in [...new Map(selectedOrder.audits.map(item => [item.new_status + item.changed_at, item])).values()]" :key="audit.id">
-                    <div style="border-left: 2px solid #6366f1; padding-left: 15px; margin-bottom: 15px; position: relative;">
-                        <div style="width: 8px; height: 8px; background: #6366f1; border-radius: 50%; position: absolute; left: -5px; top: 5px;"></div>
-                        
-                        <b x-text="audit.new_status" style="text-transform: uppercase; color: #4f46e5; font-size: 14px;"></b><br>
-                        <small x-text="new Date(audit.changed_at).toLocaleString('en-PH', { hour12: true })" style="color: #6b7280; font-size: 11px;"></small>
-                        
-                        <p x-text="audit.old_status ? 'From ' + audit.old_status : 'Order Initiated'" style="font-size: 12px; margin-top: 5px; color: #4b5563;"></p>
+                <div class="flex-1 flex flex-col gap-2">
+                    <label class="text-[10px] font-medium text-slate-500 uppercase tracking-widest ml-1">Payment</label>
+                    <x-filter-select name="payment_status" label="Select Status" onchange="this.form.submit()" class="w-full">
+                        <option value="">ALL PAYMENTS</option>
+                        <option value="{{ \App\Models\Payment::STATUS_PENDING }}" {{ request('payment_status') == \App\Models\Payment::STATUS_PENDING ? 'selected' : '' }}>PENDING</option>
+                        <option value="{{ \App\Models\Payment::STATUS_PAID }}" {{ request('payment_status') == \App\Models\Payment::STATUS_PAID ? 'selected' : '' }}>PAID</option>
+                    </x-filter-select>
+                </div>
+
+                @if(request()->anyFilled(['status', 'service', 'payment_status']))
+                    <div class="pb-1 text-center md:text-left">
+                        <a href="{{ route('dashboard') }}" class="inline-flex items-center gap-2 px-4 py-2.5 text-[10px] font-black text-rose-500 uppercase tracking-widest bg-rose-50 rounded-xl hover:bg-rose-100 border border-rose-100 transition-colors uppercase">
+                            Clear Filters
+                        </a>
                     </div>
-                </template>
+                @endif
+            </form>
+        </nav>
 
-                <button @click="showDetails = false" style="margin-top: 20px; width: 100%; background: #f1f5f9; color: #1e293b; border: none; padding: 10px; border-radius: 6px; font-weight: bold; cursor: pointer;">Close History</button>
-            </div>
+        {{-- 3. Operational Table --}}
+        <div class="overflow-x-auto rounded-[2rem] shadow-2xl border border-slate-100 bg-white">
+            @php
+                $operationalHeaders = [
+                    ['name' => 'ID', 'width' => '5%'], ['name' => 'CUSTOMER', 'width' => '12%'], ['name' => 'SERVICE DETAILS', 'width' => '15%'],
+                    ['name' => 'COLLECTION', 'width' => '13%'], ['name' => 'LAUNDRY STATUS', 'width' => '14%'], ['name' => 'PAYMENT', 'width' => '14%'],
+                    ['name' => 'DELIVERY', 'width' => '14%'], ['name' => 'ACTIONS', 'width' => '13%'],
+                ];
+            @endphp
+            <table class="w-full min-w-[1100px]">
+                <x-table-header :headers="$operationalHeaders" />
+                <tbody class="divide-y divide-slate-100">
+                    @forelse($orders as $order)
+                        @php 
+                            $isCancelled = $order->order_status === \App\Models\Order::STATUS_CANCELLED;
+                            $isCompleted = $order->order_status === \App\Models\Order::STATUS_COMPLETED;
+                            $terminalState = $isCancelled || $isCompleted; 
+                        @endphp
+                        <tr class="transition-all duration-200 {{ $isCancelled ? 'bg-rose-50/80' : ($isCompleted ? 'bg-emerald-50/20' : 'hover:bg-slate-50') }}">
+                            <td class="px-4 py-8 text-center text-[11px] font-medium text-slate-400 uppercase tracking-widest">#{{ $order->id }}</td>
+                            
+                            <td class="px-4 py-8 text-center">
+                                <button type="button" @click="customer = { name: '{{ $order->user->name }}', email: '{{ $order->user->email }}', phone: '{{ $order->user->contact_no ?? 'N/A' }}', address: '{{ $order->user->address ?? 'N/A' }}' }; openModal = true" 
+                                    class="text-[11px] font-medium text-indigo-600 uppercase tracking-tight hover:text-indigo-800 transition-all uppercase">
+                                    {{ $order->user->name }}
+                                </button>
+                            </td>
+
+                            <td class="px-4 py-8">
+                                <div class="flex flex-col min-h-[140px] justify-center">
+                                    @if($order->services->isNotEmpty() && $order->services->first()->mainService)
+                                        <span class="text-[11px] font-medium text-slate-900 uppercase tracking-tight block">{{ $order->services->first()->mainService->service_name }}</span>
+                                        <span class="text-[10px] font-medium text-slate-400 uppercase tracking-widest">{{ $order->services->first()->quantity }} {{ (str_contains(strtoupper($order->services->first()->mainService->service_name), 'DRY CLEAN')) ? 'pcs' : 'kg' }}</span>
+                                    @endif
+                                    <div class="mt-1">
+                                        @foreach($order->services as $service)
+                                            @foreach($service->addons as $addon)
+                                                <span class="text-[9px] font-medium text-indigo-400 uppercase tracking-tight block">+ {{ strtoupper($addon->addon_name) }}</span>
+                                            @endforeach
+                                        @endforeach
+                                    </div>
+                                </div>
+                            </td>
+
+                            <td class="px-2 py-4">
+                                <div class="flex flex-col items-center justify-between min-h-[140px] py-4">
+                                    <div class="flex flex-col items-center text-center">
+                                        <span class="text-[9px] text-slate-400 font-medium uppercase italic tracking-widest">{{ str_replace('_', ' ', $order->collection->collection_method) }}</span>
+                                        @if($order->collection->collection_method === 'STAFF_PICKUP' && $order->collection->collection_date)
+                                            <span class="mt-1 text-[8px] font-medium text-slate-500 uppercase tracking-tighter"> {{ \Carbon\Carbon::parse($order->collection->collection_date)->format('M d, g:i A') }}</span>
+                                        @endif
+                                    </div>
+                                    <div class="w-full flex justify-center">
+                                        @if($terminalState)
+                                            <x-order-status-select :currentStatus="$order->collection->collection_status" :terminal="true" :options="[]" />
+                                        @else
+                                            @can('update order status')
+                                                <x-order-status-select :currentStatus="$order->collection->collection_status" :options="[\App\Models\Collection::STATUS_PENDING => 'PENDING', \App\Models\Collection::STATUS_RECEIVED => 'RECEIVED']" @change="performUpdate('{{ route('orders.updateCollection', $order->id) }}', { collection_status: $el.value }, () => { window.location.reload() })" />
+                                            @else
+                                                <span class="text-[11px] font-medium tracking-tight text-slate-700 uppercase">{{ $order->collection->collection_status }}</span>
+                                            @endcan
+                                        @endif
+                                    </div>
+                                </div>
+                            </td>
+
+                            <td class="px-2 py-4">
+                                <div class="flex flex-col items-center justify-between min-h-[140px] py-4">
+                                    <span class="text-[9px] text-slate-400 font-medium uppercase italic tracking-widest"></span>
+                                    <div class="w-full flex justify-center">
+                                        @if($terminalState)
+                                            <x-order-status-select :currentStatus="$order->laundryStatus->current_status" :terminal="true" :options="[]" />
+                                        @else
+                                            @can('update order status')
+                                                <x-order-status-select :currentStatus="$order->laundryStatus->current_status" :terminal="false" :options="[\App\Models\LaundryStatus::PENDING => 'PENDING', \App\Models\LaundryStatus::WASHING => 'WASHING', \App\Models\LaundryStatus::DRYING => 'DRYING', \App\Models\LaundryStatus::FOLDING => 'FOLDING', \App\Models\LaundryStatus::IRONING => 'IRONING', \App\Models\LaundryStatus::READY => 'READY']" @change="performUpdate('{{ route('orders.updateStatus', $order->id) }}', { current_status: $el.value }, () => { window.location.reload() })" />
+                                            @else
+                                                <span class="text-[11px] font-medium uppercase tracking-tight text-slate-700">{{ $order->laundryStatus->current_status }}</span>
+                                            @endcan
+                                        @endif
+                                    </div>
+                                </div>
+                            </td>
+
+                            <td class="px-2 py-4">
+                                <div class="flex flex-col items-center justify-between min-h-[140px] py-4">
+                                    <div class="flex flex-col items-center text-center">
+                                        <span class="text-[9px] text-slate-400 font-medium uppercase italic tracking-widest">Amount: Php {{ number_format($order->total_price, 2) }}</span>
+                                    </div>
+                                    <div class="w-full flex justify-center">
+                                        @if($terminalState)
+                                            <x-order-status-select :currentStatus="$order->payment->payment_status" :terminal="true" :options="[]" />
+                                        @else
+                                            @can('process payments')
+                                                <x-order-status-select :currentStatus="$order->payment->payment_status" :options="[\App\Models\Payment::STATUS_PENDING => 'PENDING', \App\Models\Payment::STATUS_PAID => 'PAID']" @change="performUpdate('{{ route('orders.updatePayment', $order->id) }}', { payment_status: $el.value }, () => { window.location.reload(); })" />
+                                            @else
+                                                <x-order-status-badge :status="$order->payment->payment_status" />
+                                            @endcan
+                                        @endif
+                                    </div>
+                                </div>
+                            </td>
+
+                            <td class="px-2 py-4">
+                                <div class="flex flex-col items-center justify-between min-h-[140px] py-4" x-data="{ showScheduleModal: false, scheduledDate: '{{ $order->delivery->scheduled_delivery_date ? $order->delivery->scheduled_delivery_date->format('Y-m-d\TH:i') : '' }}' }">
+                                    <div class="flex flex-col items-center text-center">
+                                        <span class="text-[9px] text-slate-400 font-medium uppercase italic tracking-widest">{{ str_replace('_', ' ', $order->delivery->delivery_method) }}</span>
+                                        @if($order->delivery->scheduled_delivery_date)
+                                            <span class="mt-1 text-[8px] font-medium text-slate-500 uppercase tracking-tighter">On {{ $order->delivery->scheduled_delivery_date->format('M d, g:i A') }}</span>
+                                        @endif
+                                        @if(!$terminalState && $order->delivery->delivery_status !== 'DELIVERED')
+                                            @can('update order status')
+                                                <button @click="showScheduleModal = true" class="mt-1 text-[9px] font-medium uppercase italic text-indigo-600 hover:text-indigo-800 tracking-widest border-b border-indigo-200 uppercase">Set Sched</button>
+                                            @endcan
+                                        @endif
+                                    </div>
+                                    <div class="w-full flex justify-center">
+                                        <x-order-status-select :currentStatus="$order->delivery->delivery_status" :terminal="$terminalState" :options="['READY'=>'READY','DELIVERED'=>'DELIVERED']" @change="performUpdate('{{ route('orders.updateDelivery', $order->id) }}', { delivery_status: $el.value }, () => { window.location.reload() })" />
+                                    </div>
+                                    <div x-show="showScheduleModal" x-cloak class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[10000] flex items-center justify-center p-4">
+                                        <div @click.away="showScheduleModal = false" class="bg-white rounded-2xl p-6 w-full max-w-sm shadow-2xl border border-slate-100 text-left">
+                                            <h4 class="text-sm font-medium uppercase italic tracking-widest text-slate-800 mb-4 uppercase border-b pb-2">SET DELIVERY DATE</h4>
+                                            <input type="datetime-local" x-model="scheduledDate" class="w-full border-2 border-slate-100 rounded-xl p-3 text-sm font-medium text-slate-700 mb-4 uppercase">
+                                            <div class="flex justify-end gap-3">
+                                                <button type="button" @click="showScheduleModal = false" class="px-4 py-2 text-[10px] font-medium uppercase text-slate-400">Cancel</button>
+                                                <button type="button" @click="performUpdate('{{ route('orders.setDeliverySchedule', $order->id) }}', { scheduled_date: scheduledDate }, () => { window.location.reload() })" class="bg-indigo-600 text-white px-5 py-2 rounded-xl font-medium text-[10px] uppercase shadow-lg shadow-indigo-100">Save</button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </td>
+
+                            <td class="px-4 py-8 text-center">
+                                <div class="flex flex-col items-center justify-center min-h-[140px] gap-3">
+                                    <button @click="selectedOrder = @js($order->load(['audits' => fn($q) => $q->orderBy('changed_at', 'desc'), 'payment', 'delivery'])); showDetails = true" 
+                                        class="text-[10px] font-medium text-indigo-500 uppercase tracking-widest hover:text-indigo-700 transition-colors bg-indigo-50/50 px-4 py-2 rounded-lg border border-indigo-100 w-full shadow-sm uppercase">
+                                        VIEW TRACKING
+                                    </button>
+                                    @if($order->isCancellable())
+                                        @can('cancel any order', $order)
+                                            <form action="{{ route('orders.cancel', $order->id) }}" method="POST" class="w-full inline">
+                                                @csrf @method('PATCH')
+                                                <button type="submit" class="text-rose-500 font-medium text-[10px] uppercase tracking-widest bg-rose-50/50 px-4 py-2 rounded-lg border border-rose-100 w-full transition-all shadow-sm uppercase" onclick="return confirm('Archive entry?')">CANCEL</button>
+                                            </form>
+                                        @endcan
+                                    @endif
+                                    <div class="flex flex-col gap-1 items-center pt-1">
+                                        @if($isCancelled) <span class="text-[9px] font-medium text-rose-400 uppercase tracking-widest">CANCELLED</span> @endif
+                                        @if($isCompleted) <span class="text-[9px] font-medium text-emerald-500 uppercase tracking-widest">COMPLETED</span> @endif
+                                        @if(!$terminalState) <span class="text-[9px] font-medium text-slate-300 uppercase tracking-widest">ACTIVE</span> @endif
+                                    </div>
+                                </div>
+                            </td>
+                        </tr>
+                    @empty
+                        <tr><td colspan="8" class="py-24 text-center text-[11px] font-medium text-slate-400 uppercase tracking-[0.2em]">No operational entries found</td></tr>
+                    @endforelse
+                </tbody>
+            </table>
         </div>
+
+        {{-- Pagination --}}
+        @if($orders->hasPages())
+            <div class="mt-10 px-4">
+                <div class="flex flex-col md:flex-row justify-between items-center gap-6 bg-white p-6 rounded-[2rem] border border-slate-100 shadow-sm">
+                    
+                    {{-- 1. Custom Status Text (Left) --}}
+                    <div class="text-[10px] font-medium text-slate-400 uppercase tracking-widest">
+                        Showing <span class="text-slate-900">{{ $orders->firstItem() }}</span> 
+                        to <span class="text-slate-900">{{ $orders->lastItem() }}</span> 
+                        of <span class="text-slate-900">{{ $orders->total() }}</span> entries
+                    </div>
+
+                    {{-- 2. Component-Based Navigation (Right) --}}
+                    <div class="flex items-center gap-2">
+                        {{-- Previous Page Button --}}
+                        @if ($orders->onFirstPage())
+                            <button disabled class="px-4 py-2 text-[10px] font-bold text-slate-300 uppercase tracking-widest bg-slate-50 rounded-xl cursor-not-allowed">
+                                Previous
+                            </button>
+                        @else
+                            <x-secondary-button onclick="window.location='{{ $orders->previousPageUrl() }}'" class="!text-[10px] !font-bold !px-4 !py-2 !rounded-xl uppercase">
+                                Previous
+                            </x-secondary-button>
+                        @endif
+
+                        {{-- Next Page Button --}}
+                        @if ($orders->hasMorePages())
+                            <x-secondary-button onclick="window.location='{{ $orders->nextPageUrl() }}'" class="!text-[10px] !font-bold !px-4 !py-2 !rounded-xl uppercase">
+                                Next
+                            </x-secondary-button>
+                        @else
+                            <button disabled class="px-4 py-2 text-[10px] font-bold text-slate-300 uppercase tracking-widest bg-slate-50 rounded-xl cursor-not-allowed">
+                                Next
+                            </button>
+                        @endif
+                    </div>
+
+                </div>
+            </div>
+        @endif
+
+        <x-customer-modal x-show="openModal">
+            <div class="space-y-6 text-[11px] font-medium uppercase tracking-widest text-slate-500">
+                <div class="flex justify-between items-center"><span class="text-slate-300">E-MAIL:</span> <span x-text="customer.email" class="lowercase tracking-normal text-slate-700 uppercase"></span></div>
+                <div class="flex justify-between items-center"><span class="text-slate-300">CONTACT NO:</span> <span x-text="customer.phone" class="text-slate-700 uppercase"></span></div>
+                <div class="flex justify-between items-center"><span class="text-slate-300">ADDRESS:</span> <span x-text="customer.address" class="text-slate-700 text-right ml-4 leading-tight font-normal uppercase"></span></div>
+            </div>
+        </x-customer-modal>
+
+        <x-tracking-modal x-show="showDetails">
+            <div class="bg-slate-50 p-6 md:p-8 rounded-2xl mb-10 space-y-4 border border-slate-100">
+                <h4 class="text-[10px] font-medium text-slate-400 uppercase tracking-[0.2em] mb-2 uppercase font-medium">Primary Milestones</h4>
+                <div class="flex justify-between items-center text-[11px] uppercase tracking-widest uppercase font-medium"><span class="text-slate-500">Payment:</span><span class="text-emerald-600 font-medium uppercase" x-text="selectedOrder.payment?.payment_date ? new Date(selectedOrder.payment.payment_date).toLocaleString() : 'Pending'"></span></div>
+                <div class="flex justify-between items-center text-[11px] uppercase tracking-widest uppercase font-medium"><span class="text-slate-500">Target Schedule:</span><span class="text-indigo-600 font-medium uppercase" x-text="selectedOrder.delivery?.scheduled_delivery_date ? new Date(selectedOrder.delivery.scheduled_delivery_date).toLocaleString() : 'Not set'"></span></div>
+            </div>
+            <h4 class="text-[11px] text-slate-400 uppercase font-medium mb-6 px-1 uppercase font-medium">Operational History</h4>
+            <template x-for="audit in [...new Map(selectedOrder.audits.map(item => [item.new_status + item.changed_at, item])).values()]" :key="audit.id">
+                <div class="relative pl-10 pb-10 border-l border-slate-100 last:border-0 ml-2 font-medium">
+                    <div class="absolute -left-[5.5px] top-1 w-2.5 h-2.5 rounded-full border-2 border-white bg-indigo-500 shadow-sm"></div>
+                    <div class="flex flex-col gap-1.5 text-left font-normal uppercase">
+                        <span class="text-[13px] font-medium text-slate-800 uppercase tracking-tight" x-text="audit.new_status"></span>
+                        <span class="text-[10px] text-slate-400 uppercase tracking-tighter" x-text="new Date(audit.changed_at).toLocaleString('en-PH', { hour12: true })"></span>
+                        <p class="text-[10px] text-slate-400 mt-1 lowercase italic uppercase" x-text="audit.old_status ? 'Transitioned from ' + audit.old_status.toLowerCase() : 'Entry initiated'"></p>
+                    </div>
+                </div>
+            </template>
+        </x-tracking-modal>
     </div>
 </x-app-layout>
 
 <script>
     function orderSystem() {
         return {
-            openModal: false,
-            customer: {},
-            showDetails: false,
-            selectedOrder: { audits: [] },
-
+            openModal: false, customer: {}, showDetails: false, selectedOrder: { audits: [] },
             async performUpdate(url, payload, successCallback) {
                 try {
                     const response = await fetch(url, {
@@ -361,26 +313,10 @@
                         },
                         body: JSON.stringify(payload)
                     });
-
-                    if (response.status === 200) {
-                        successCallback();
-                    } 
-                    else if (response.status === 403) {
-                        alert('Unauthorized: Wala kang permiso na gawin ito.');
-                        window.location.reload(); 
-                    } 
-                    else if (response.status === 422) {
-                        const data = await response.json();
-                        alert('Error: ' + (data.message || 'Invalid data.'));
-                    }
-                    else {
-                        alert('May nangyaring mali sa server. Pakisubukang muli.');
-                    }
-
-                } catch (error) {
-                    console.error('Network Error:', error);
-                    alert('Hindi makakonekta sa server. I-check ang iyong internet connection.');
-                }
+                    if (response.status === 200) { successCallback(); } 
+                    else if (response.status === 403) { alert('Unauthorized Access.'); window.location.reload(); }
+                    else { alert('Transaction failed: Entry status lock.'); }
+                } catch (error) { console.error('Network Error:', error); alert('Signal loss: Check local internet connection.'); }
             }
         }
     }
