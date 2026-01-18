@@ -1,142 +1,204 @@
 <x-app-layout>
     <x-slot name="header">
-        <div style="display: flex; justify-content: space-between; align-items: center;">
-            <h2 class="font-semibold text-xl text-gray-800 leading-tight">
-                {{ __('Service & Pricing Management') }}
-            </h2>
+        <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 px-2 md:px-4">
+            <div>
+                <h2 class="font-medium text-xl text-slate-800 uppercase tracking-tighter">{{ __('Service Management') }}</h2>
+                <p class="text-[11px] font-medium text-slate-500 uppercase tracking-widest mt-1">{{ __('Define operational service types and premium pricing tiers.') }}</p>
+            </div>
         </div>
     </x-slot>
 
-    <div class="py-12">
-        <div class="max-w-7xl mx-auto sm:px-6 lg:px-8 space-y-6">
-            
-            @if(session('success'))
-                <div style="border: 1px solid black; padding: 10px; margin-bottom: 20px; background-color: #f0fff4;">
-                    <strong>SUCCESS:</strong> {{ session('success') }}
-                </div>
-            @endif
+    <div class="py-8 px-4 md:px-10 max-w-[90rem] mx-auto space-y-12">
+        
+        {{-- Standardized Alert --}}
+        @if(session('success'))
+            <div class="bg-emerald-50 border border-emerald-100 p-4 rounded-xl flex items-center gap-3 shadow-sm animate-fade-in">
+                <svg class="w-4 h-4 text-emerald-500" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/></svg>
+                <span class="text-[10px] font-medium text-emerald-700 uppercase tracking-widest">SYSTEM UPDATE: {{ session('success') }}</span>
+            </div>
+        @endif
 
-            {{-- MAIN SERVICES SECTION --}}
-            <div style="background: white; border: 1px solid black; padding: 25px;">
-                <h3 style="font-weight: bold; margin-bottom: 15px;">MAIN SERVICES</h3>
-                <table style="width: 100%; border-collapse: collapse; margin-bottom: 20px;">
-                    <thead>
-                        <tr style="background: #f3f3f3;">
-                            <th style="border: 1px solid black; padding: 10px; text-align: left;">SERVICE NAME</th>
-                            <th style="border: 1px solid black; padding: 10px; text-align: left;">PRICE</th>
-                            <th style="border: 1px solid black; padding: 10px; text-align: left;">UNIT</th>
-                            <th style="border: 1px solid black; padding: 10px; text-align: center;">STATUS</th>
-                            <th style="border: 1px solid black; padding: 10px; text-align: right;">ACTIONS</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        @foreach($services as $service)
-                        <tr x-data="{ editing: false }" style="border-bottom: 1px solid black; {{ $service->is_active ? '' : 'background-color: #f3f4f6; opacity: 0.7;' }}">
-                            {{-- View Mode --}}
-                            <td x-show="!editing" style="border: 1px solid black; padding: 10px;">
-                                {{ $service->service_name }}
-                                @if(!$service->is_active) <span style="font-size: 10px; color: red;">(DISCONTINUED)</span> @endif
-                            </td>
-                            <td x-show="!editing" style="border: 1px solid black; padding: 10px;">₱{{ number_format($service->service_base_price, 2) }}</td>
-                            <td x-show="!editing" style="border: 1px solid black; padding: 10px;">{{ $service->pricing_type }}</td>
-                            <td x-show="!editing" style="border: 1px solid black; padding: 10px; text-align: center;">
-                                <form action="{{ route('admin.services.toggle', $service->id) }}" method="POST">
-                                    @csrf @method('PATCH')
-                                    <button type="submit" style="font-weight: bold; cursor: pointer; background: none; border: none; color: {{ $service->is_active ? 'green' : 'red' }}; text-decoration: underline;">
-                                        {{ $service->is_active ? 'ACTIVE' : 'INACTIVE' }}
-                                    </button>
-                                </form>
-                            </td>
-                            <td x-show="!editing" style="border: 1px solid black; padding: 10px; text-align: right;">
-                                <button @click="editing = true" style="text-decoration: underline; font-weight: bold; cursor: pointer;">EDIT</button>
-                            </td>
-
-                            {{-- Edit Mode --}}
-                            <td x-show="editing" colspan="5" style="border: 1px solid black; padding: 10px; background-color: #f9f9f9;">
-                                <form action="{{ route('admin.services.update', $service->id) }}" method="POST" style="display: flex; gap: 10px; align-items: center;">
-                                    @csrf @method('PATCH')
-                                    <input type="text" name="service_name" value="{{ $service->service_name }}" required style="flex: 2; border: 1px solid black; padding: 5px;">
-                                    <input type="number" step="0.01" name="service_base_price" value="{{ $service->service_base_price }}" required style="flex: 1; border: 1px solid black; padding: 5px;">
-                                    <select name="pricing_type" style="flex: 1; border: 1px solid black; padding: 5px;">
-                                        <option value="PER_KG" {{ $service->pricing_type == 'PER_KG' ? 'selected' : '' }}>PER KG</option>
-                                        <option value="PER_ITEM" {{ $service->pricing_type == 'PER_ITEM' ? 'selected' : '' }}>PER ITEM</option>
-                                    </select>
-                                    <button type="submit" style="background: black; color: white; padding: 5px 15px; font-weight: bold; border: none; cursor: pointer;">SAVE</button>
-                                    <button type="button" @click="editing = false" style="text-decoration: underline; cursor: pointer;">CANCEL</button>
-                                </form>
-                            </td>
-                        </tr>
-                        @endforeach
-                    </tbody>
-                </table>
-
-                {{-- Add Service Form --}}
-                <form action="{{ route('admin.services.store') }}" method="POST" style="display: flex; gap: 10px;">
-                    @csrf
-                    <input type="text" name="service_name" placeholder="New Service Name" required style="flex: 2; border: 1px solid black; padding: 8px;">
-                    <input type="number" step="0.01" name="service_base_price" placeholder="Price" required style="flex: 1; border: 1px solid black; padding: 8px;">
-                    <select name="pricing_type" style="flex: 1; border: 1px solid black; padding: 8px;">
-                        <option value="PER_KG">PER KG</option>
-                        <option value="PER_ITEM">PER ITEM</option>
-                    </select>
-                    <button type="submit" style="background: black; color: white; padding: 8px 20px; font-weight: bold; border: none; cursor: pointer;">ADD SERVICE</button>
-                </form>
+        {{-- 1. CORE SERVICES SECTION --}}
+        <div class="space-y-6">
+            <div class="flex items-center justify-between px-1">
+                <h3 class="text-[10px] font-medium uppercase tracking-[0.25em] text-slate-500">Core Service Catalog</h3>
+                <span class="text-[10px] font-medium text-slate-400 uppercase tracking-widest">{{ $services->count() }} ACTIVE ENTRIES</span>
             </div>
 
-            {{-- ADD-ONS SECTION --}}
-            <div style="background: white; border: 1px solid black; padding: 25px;">
-                <h3 style="font-weight: bold; margin-bottom: 15px;">ADD-ONS</h3>
-                <table style="width: 100%; border-collapse: collapse; margin-bottom: 20px;">
-                    <thead>
-                        <tr style="background: #f3f3f3;">
-                            <th style="border: 1px solid black; padding: 10px; text-align: left;">ADD-ON NAME</th>
-                            <th style="border: 1px solid black; padding: 10px; text-align: left;">PRICE</th>
-                            <th style="border: 1px solid black; padding: 10px; text-align: center;">STATUS</th>
-                            <th style="border: 1px solid black; padding: 10px; text-align: right;">ACTIONS</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        @foreach($addons as $addon)
-                        <tr x-data="{ editing: false }" style="border-bottom: 1px solid black; {{ $addon->is_active ? '' : 'background-color: #f3f4f6; opacity: 0.7;' }}">
-                            {{-- View Mode --}}
-                            <td x-show="!editing" style="border: 1px solid black; padding: 10px;">
-                                {{ $addon->addon_name }}
-                                @if(!$addon->is_active) <span style="font-size: 10px; color: red;">(DISCONTINUED)</span> @endif
-                            </td>
-                            <td x-show="!editing" style="border: 1px solid black; padding: 10px;">₱{{ number_format($addon->addon_price, 2) }}</td>
-                            <td x-show="!editing" style="border: 1px solid black; padding: 10px; text-align: center;">
-                                <form action="{{ route('admin.addons.toggle', $addon->id) }}" method="POST">
-                                    @csrf @method('PATCH')
-                                    <button type="submit" style="font-weight: bold; cursor: pointer; background: none; border: none; color: {{ $addon->is_active ? 'green' : 'red' }}; text-decoration: underline;">
-                                        {{ $addon->is_active ? 'ACTIVE' : 'INACTIVE' }}
-                                    </button>
-                                </form>
-                            </td>
-                            <td x-show="!editing" style="border: 1px solid black; padding: 10px; text-align: right;">
-                                <button @click="editing = true" style="text-decoration: underline; font-weight: bold; cursor: pointer;">EDIT</button>
-                            </td>
+            <div class="overflow-x-auto rounded-[2rem] shadow-2xl border border-slate-100 bg-white">
+                <table class="w-full min-w-[800px]">
+                    <x-table-header :headers="[['name'=>'DESIGNATION','width'=>'30%'], ['name'=>'UNIT COST','width'=>'20%'], ['name'=>'METRIC','width'=>'20%'], ['name'=>'AVAILABILITY','width'=>'15%'], ['name'=>'MANAGE','width'=>'15%']]" />
 
-                            {{-- Edit Mode --}}
-                            <td x-show="editing" colspan="4" style="border: 1px solid black; padding: 10px; background-color: #f9f9f9;">
-                                <form action="{{ route('admin.addons.update', $addon->id) }}" method="POST" style="display: flex; gap: 10px; align-items: center;">
+                    <tbody class="divide-y divide-slate-100">
+                        @foreach($services as $service)
+                        <tr x-data="{ editing: false }" class="hover:bg-slate-50 transition-all duration-200 text-center">
+                            
+                            <template x-if="!editing">
+                                <td class="px-4 py-8">
+                                    <div class="flex flex-col items-center justify-center">
+                                        <span class="text-[11px] text-slate-900 uppercase tracking-tight">{{ $service->service_name }}</span>
+                                        @if(!$service->is_active) <span class="text-[9px] text-rose-500 font-medium uppercase tracking-widest mt-1 italic">SYSTEM OFFLINE</span> @endif
+                                    </div>
+                                </td>
+                            </template>
+                            
+                            <template x-if="!editing">
+                                <td class="px-4 py-8">
+                                    <span class="text-[11px] text-indigo-600 tracking-tighter">PHP {{ number_format($service->service_base_price, 2) }}</span>
+                                </td>
+                            </template>
+
+                            <template x-if="!editing">
+                                <td class="px-4 py-8">
+                                    <span class="text-[10px] text-slate-500 uppercase tracking-widest">{{ str_replace('_', ' ', $service->pricing_type) }}</span>
+                                </td>
+                            </template>
+
+                            <template x-if="!editing">
+                                <td class="px-4 py-8 text-center">
+                                    <form action="{{ route('admin.services.toggle', $service->id) }}" method="POST">
+                                        @csrf @method('PATCH')
+                                        <button type="submit" 
+                                            class="px-4 py-2 text-[9px] font-medium uppercase tracking-[0.2em] rounded-full border transition-all active:scale-90 shadow-sm
+                                            {{ $service->is_active 
+                                                ? 'bg-emerald-50 text-emerald-600 border-emerald-100 hover:bg-emerald-100' 
+                                                : 'bg-rose-50 text-rose-600 border-rose-100 hover:bg-rose-100' }}">
+                                            {{ $service->is_active ? 'ONLINE' : 'OFFLINE' }}
+                                        </button>
+                                    </form>
+                                </td>
+                            </template>
+
+                            <template x-if="!editing">
+                                <td class="px-4 py-8">
+                                    <x-secondary-button @click="editing = true" class="!bg-[#475569] !text-white !border-none !text-[9px] !font-medium tracking-widest py-2 px-5 rounded-lg shadow-sm transition-all active:scale-95 uppercase">MODIFY</x-secondary-button>
+                                </td>
+                            </template>
+
+                            {{-- Edit Mode Overlay --}}
+                            <td x-show="editing" colspan="5" class="p-8 bg-slate-50" x-cloak>
+                                <form action="{{ route('admin.services.update', $service->id) }}" method="POST" class="grid grid-cols-1 md:grid-cols-4 gap-8 items-end bg-white p-8 rounded-[2rem] border border-slate-200 shadow-xl">
                                     @csrf @method('PATCH')
-                                    <input type="text" name="addon_name" value="{{ $addon->addon_name }}" required style="flex: 2; border: 1px solid black; padding: 5px;">
-                                    <input type="number" step="0.01" name="addon_price" value="{{ $addon->addon_price }}" required style="flex: 1; border: 1px solid black; padding: 5px;">
-                                    <button type="submit" style="background: black; color: white; padding: 5px 15px; font-weight: bold; border: none; cursor: pointer;">SAVE</button>
-                                    <button type="button" @click="editing = false" style="text-decoration: underline; cursor: pointer;">CANCEL</button>
+                                    <x-form-input label="Service Designation" name="service_name" :value="$service->service_name" required class="!font-medium uppercase !rounded-xl" />
+                                    <x-form-input label="Unit Rate (PHP)" type="number" step="0.01" name="service_base_price" :value="$service->service_base_price" required class="!font-medium !rounded-xl" />
+                                    
+                                    <div class="space-y-2">
+                                        <label class="block text-[10px] font-medium text-slate-400 uppercase tracking-widest ml-1">Metric Selection</label>
+                                        <select name="pricing_type" class="w-full border-slate-200 rounded-xl p-3 text-[11px] font-medium text-slate-700 focus:ring-0 uppercase">
+                                            <option value="PER_KG" {{ $service->pricing_type == 'PER_KG' ? 'selected' : '' }}>PER KILOGRAM</option>
+                                            <option value="PER_ITEM" {{ $service->pricing_type == 'PER_ITEM' ? 'selected' : '' }}>PER ITEM</option>
+                                        </select>
+                                    </div>
+
+                                    <div class="flex items-center gap-4">
+                                        <x-primary-button class="!bg-indigo-600 !font-medium uppercase tracking-widest !rounded-full py-3 px-8 shadow-lg shadow-indigo-100">SAVE</x-primary-button>
+                                        <button type="button" @click="editing = false" class="text-[10px] font-medium text-slate-400 hover:text-rose-500 uppercase tracking-widest px-2 transition-colors">DISCARD</button>
+                                    </div>
                                 </form>
                             </td>
                         </tr>
                         @endforeach
                     </tbody>
                 </table>
+            </div>
 
-                {{-- Add Add-on Form --}}
-                <form action="{{ route('admin.addons.store') }}" method="POST" style="display: flex; gap: 10px;">
+            {{-- Add Service Section --}}
+            <div class="bg-white rounded-[2.5rem] p-10 border border-slate-100 shadow-sm border-dashed border-2">
+                <span class="block text-[10px] font-medium text-slate-400 uppercase tracking-[0.25em] mb-10 text-center italic">INITIALIZE NEW SERVICE CATEGORY</span>
+                <form action="{{ route('admin.services.store') }}" method="POST" class="grid grid-cols-1 md:grid-cols-4 gap-8 items-end">
                     @csrf
-                    <input type="text" name="addon_name" placeholder="New Add-on Name" required style="flex: 2; border: 1px solid black; padding: 8px;">
-                    <input type="number" step="0.01" name="addon_price" placeholder="Price" required style="flex: 1; border: 1px solid black; padding: 8px;">
-                    <button type="submit" style="background: black; color: white; padding: 8px 20px; font-weight: bold; border: none; cursor: pointer;">ADD ADD-ON</button>
+                    <x-form-input name="service_name" placeholder="IDENTIFY SERVICE TYPE" required class="!font-medium uppercase !rounded-xl" />
+                    <x-form-input type="number" step="0.01" name="service_base_price" placeholder="RATE (0.00)" required class="!font-medium !rounded-xl" />
+                    
+                    <select name="pricing_type" class="w-full border-slate-200 rounded-xl p-3.5 text-[11px] font-medium text-slate-600 focus:ring-0 uppercase">
+                        <option value="PER_KG">PER KILOGRAM</option>
+                        <option value="PER_ITEM">PER ITEM</option>
+                    </select>
+
+                    <x-primary-button class="!bg-[#475569] !font-medium uppercase tracking-widest py-3.5 !rounded-full shadow-xl transition-all active:scale-95">
+                        + ADD SERVICE
+                    </x-primary-button>
+                </form>
+            </div>
+        </div>
+
+        {{-- 2. ADD-ONS SECTION --}}
+        <div class="space-y-6 pt-8">
+            <div class="flex items-center justify-between px-1">
+                <h3 class="text-[10px] font-medium uppercase tracking-[0.25em] text-slate-500">Premium Utility Extras</h3>
+                <span class="text-[10px] font-medium text-slate-400 uppercase tracking-widest">{{ $addons->count() }} OPTIONS</span>
+            </div>
+
+            <div class="overflow-x-auto rounded-[2rem] shadow-2xl border border-slate-100 bg-white">
+                <table class="w-full min-w-[800px]">
+                    <x-table-header :headers="[['name' => 'UTILITY','width' => '40%'], ['name' => 'PREMIUM COST','width' => '25%'], ['name' => 'AVAILABILITY','width' => '20%'], ['name' => 'MANAGE','width' => '15%']]" />
+
+                    <tbody class="divide-y divide-slate-100">
+                        @foreach($addons as $addon)
+                        <tr x-data="{ editing: false }" class="hover:bg-slate-50 transition-all duration-200 text-center">
+                            
+                            <template x-if="!editing">
+                                <td class="px-4 py-8">
+                                    <span class="text-[11px] text-slate-900 uppercase tracking-tight">{{ $addon->addon_name }}</span>
+                                </td>
+                            </template>
+
+                            <template x-if="!editing">
+                                <td class="px-4 py-8">
+                                    <span class="text-[11px] text-indigo-600 tracking-tighter">PHP {{ number_format($addon->addon_price, 2) }}</span>
+                                </td>
+                            </template>
+
+                            <template x-if="!editing">
+                                <td class="px-4 py-8">
+                                    <form action="{{ route('admin.addons.toggle', $addon->id) }}" method="POST">
+                                        @csrf @method('PATCH')
+                                        <button type="submit" 
+                                            class="px-4 py-2 text-[9px] font-medium uppercase tracking-[0.2em] rounded-full border transition-all active:scale-90 shadow-sm
+                                            {{ $addon->is_active 
+                                                ? 'bg-emerald-50 text-emerald-600 border-emerald-100 hover:bg-emerald-100' 
+                                                : 'bg-rose-50 text-rose-600 border-rose-100 hover:bg-rose-100' }}">
+                                            {{ $addon->is_active ? 'ACTIVE' : 'INACTIVE' }}
+                                        </button>
+                                    </form>
+                                </td>
+                            </template>
+
+                            <template x-if="!editing">
+                                <td class="px-4 py-8">
+                                    <x-secondary-button @click="editing = true" class="!bg-[#475569] !text-white !border-none !text-[9px] !font-medium tracking-widest py-2 px-5 rounded-lg shadow-sm transition-all active:scale-95 uppercase">MODIFY</x-secondary-button>
+                                </td>
+                            </template>
+
+                            {{-- Edit Mode for Add-on --}}
+                            <td x-show="editing" colspan="4" class="p-8 bg-slate-50" x-cloak>
+                                <form action="{{ route('admin.addons.update', $addon->id) }}" method="POST" class="grid grid-cols-1 md:grid-cols-3 gap-8 items-end bg-white p-8 rounded-[2rem] border border-slate-200 shadow-xl">
+                                    @csrf @method('PATCH')
+                                    <x-form-input label="Extra Designation" name="addon_name" :value="$addon->addon_name" required class="!font-medium uppercase !rounded-xl" />
+                                    <x-form-input label="Premium Rate" type="number" step="0.01" name="addon_price" :value="$addon->addon_price" required class="!font-medium !rounded-xl" />
+                                    
+                                    <div class="flex items-center gap-4">
+                                        <x-primary-button class="!bg-indigo-600 !font-medium uppercase tracking-widest !rounded-full py-3 px-8 shadow-lg shadow-indigo-100 w-full sm:w-auto">SAVE</x-primary-button>
+                                        <button type="button" @click="editing = false" class="text-[10px] font-medium text-slate-400 hover:text-rose-500 uppercase tracking-widest transition-colors">DISCARD</button>
+                                    </div>
+                                </form>
+                            </td>
+                        </tr>
+                        @endforeach
+                    </tbody>
+                </table>
+            </div>
+
+            {{-- Add Add-on --}}
+            <div class="bg-white rounded-[2.5rem] p-10 border border-slate-100 shadow-sm border-dashed border-2">
+                <span class="block text-[10px] font-medium text-slate-400 uppercase tracking-[0.25em] mb-10 text-center italic">INITIALIZE NEW PREMIUM OPTION</span>
+                <form action="{{ route('admin.addons.store') }}" method="POST" class="grid grid-cols-1 md:grid-cols-3 gap-8 items-end">
+                    @csrf
+                    <x-form-input name="addon_name" placeholder="DESCRIBE UTILITY EXTRA" required class="!font-medium uppercase !rounded-xl" />
+                    <x-form-input type="number" step="0.01" name="addon_price" placeholder="RATE (0.00)" required class="!font-medium !rounded-xl" />
+                    <x-primary-button class="!bg-[#475569] !font-medium uppercase tracking-widest py-3.5 !rounded-full shadow-xl transition-all active:scale-95">
+                        + ADD ONS
+                    </x-primary-button>
                 </form>
             </div>
         </div>
