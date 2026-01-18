@@ -54,6 +54,7 @@ Route::middleware('auth')->group(function () {
         Route::patch('/orders/{id}/status', [OrderController::class, 'updateStatus'])->name('orders.updateStatus');
         Route::patch('/orders/{id}/delivery', [OrderController::class, 'updateDelivery'])->name('orders.updateDelivery');
         Route::patch('/orders/{id}/set-schedule', [OrderController::class, 'setDeliverySchedule'])->name('orders.setDeliverySchedule');
+        Route::patch('/orders/{id}/collection-schedule', [OrderController::class, 'setCollectionSchedule'])->name('orders.setCollectionSchedule');
     });
 
     // --- Administrative Modules ---
