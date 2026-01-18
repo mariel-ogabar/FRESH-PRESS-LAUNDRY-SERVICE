@@ -1,100 +1,108 @@
 <x-app-layout>
     <x-slot name="header">
-        <div style="display: flex; justify-content: space-between; align-items: center;">
-            <h2 class="font-semibold text-xl text-gray-800 leading-tight">
-                PERMISSION SETTINGS: {{ strtoupper($staff->name) }}
-            </h2>
-            <a href="{{ route('admin.staff.index') }}" style="text-decoration: underline; color: black; font-weight: bold;">
-                [ BACK TO LIST ]
-            </a>
+        <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 px-2 md:px-4">
+            <div>
+                <h2 class="font-medium text-xl text-slate-800 uppercase tracking-tighter">
+                    UPDATE PERMISSION: {{ $staff->name }}
+                </h2>
+                <p class="text-[11px] font-medium text-slate-400 uppercase tracking-widest mt-1">
+                    Modify credential logic and system access levels.
+                </p>
+            </div>
+            
+            <x-secondary-button onclick="window.location='{{ route('admin.staff.index') }}'" class="!font-medium uppercase tracking-widest !text-[10px] !py-2.5">
+                <svg class="w-3 h-3 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path>
+                </svg>
+                {{ __('BACK TO LIST') }}
+            </x-secondary-button>
         </div>
     </x-slot>
 
-    <div class="py-12">
-        <div class="max-w-4xl mx-auto sm:px-6 lg:px-8">
+    <div class="py-8 px-4 md:px-10 max-w-[90rem] mx-auto">
+        <div class="max-w-4xl mx-auto space-y-8">
             
-            @if(session('success'))
-                <div style="border: 1px solid black; padding: 10px; margin-bottom: 20px; background-color: #f0fff4;">
-                    <strong>SUCCESS:</strong> {{ session('success') }}
-                </div>
-            @endif
-
-            @if($errors->any())
-                <div style="border: 1px solid red; color: red; padding: 10px; margin-bottom: 20px; background: #fee2e2;">
-                    <ul style="margin: 0; padding-left: 20px;">
+            {{-- Validation Feedback --}}
+            @if ($errors->any())
+                <div class="bg-rose-50 border border-rose-100 p-5 rounded-2xl flex flex-col gap-3 shadow-sm animate-fade-in">
+                    <div class="flex items-center gap-2">
+                        <svg class="w-4 h-4 text-rose-500" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clip-rule="evenodd"/></svg>
+                        <span class="text-[10px] font-semibold text-rose-700 uppercase tracking-widest">Configuration Errors Detected:</span>
+                    </div>
+                    <ul class="text-[10px] font-medium text-rose-500 uppercase list-none space-y-1 ml-6">
                         @foreach ($errors->all() as $error)
-                            <li>{{ $error }}</li>
+                            <li>— {{ $error }}</li>
                         @endforeach
                     </ul>
                 </div>
             @endif
 
-            <div class="bg-white p-8" style="border: 1px solid black;">
-                <form action="{{ route('admin.staff.update', $staff->id) }}" method="POST">
-                    @csrf
-                    @method('PATCH')
+            <div class="bg-white rounded-[2rem] shadow-2xl border border-slate-100 overflow-hidden">
+                {{-- Refined Sub-header --}}
+                <div class="bg-slate-50/50 px-8 py-6 border-b border-slate-100 text-center">
+                    <span class="text-[10px] font-medium text-slate-400 uppercase tracking-[0.25em]">Credential & Access Logic</span>
+                </div>
 
-                    {{-- Staff Basic Information --}}
-                    <div style="margin-bottom: 20px; display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
-                        <div>
-                            <label style="display: block; font-weight: bold; margin-bottom: 5px;">NAME:</label>
-                            <input type="text" name="name" value="{{ old('name', $staff->name) }}" required 
-                                   style="width: 100%; border: 1px solid black; padding: 8px;">
-                        </div>
-                        <div>
-                            <label style="display: block; font-weight: bold; margin-bottom: 5px;">EMAIL:</label>
-                            <input type="email" name="email" value="{{ old('email', $staff->email) }}" required 
-                                   style="width: 100%; border: 1px solid black; padding: 8px;">
-                        </div>
+                <form action="{{ route('admin.staff.update', $staff->id) }}" method="POST" class="p-8 md:p-12 space-y-12" autocomplete="off">
+                    @csrf 
+                    @method('PATCH')
+                    
+                    {{-- Identity Section --}}
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-x-10 gap-y-8">
+                        <x-form-input label="Identity Name" name="name" :value="$staff->name" required class="!font-medium uppercase !rounded-xl" />
+                        <x-form-input label="System Email" type="email" name="email" :value="$staff->email" required class="!font-medium !rounded-xl" />
                     </div>
 
                     {{-- Role Selection --}}
-                    <div style="margin-bottom: 20px;">
-                        <label style="display: block; font-weight: bold; margin-bottom: 5px; color: #4f46e5;">ASSIGN SYSTEM ROLE:</label>
-                        <select name="role" required style="width: 100%; border: 1px solid black; padding: 8px; font-weight: bold;">
+                    <div class="py-4">
+                        <label class="block text-[11px] font-medium text-slate-400 uppercase tracking-[0.2em] mb-8 text-center">Functional Role Assignment</label>
+                        <div class="flex flex-col sm:flex-row justify-center items-center gap-8 sm:gap-16">
                             @foreach($roles as $role)
-                                <option value="{{ $role->name }}" {{ $staff->hasRole($role->name) ? 'selected' : '' }}>
-                                    {{ strtoupper($role->name) }}
-                                </option>
-                            @endforeach
-                        </select>
-                    </div>
-
-                    <hr style="border: 0; border-top: 1px solid black; margin-bottom: 20px;">
-
-                    <p style="font-weight: bold; margin-bottom: 15px;">INDIVIDUAL PERMISSIONS (RESTRICTIONS):</p>
-                    
-                    {{-- Permissions Checkbox Grid --}}
-                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 30px;">
-                        @foreach($permissions as $permission)
-                            <div style="border: 1px solid black; padding: 10px; display: flex; align-items: center; gap: 10px;">
-                                <input type="checkbox" 
-                                       name="permissions[]" 
-                                       value="{{ $permission->name }}" 
-                                       id="perm_{{ $permission->id }}"
-                                       style="width: 18px; height: 18px; cursor: pointer; border: 1px solid black;"
-                                       {{-- Checks if the user specifically has this permission --}}
-                                       {{ $staff->hasDirectPermission($permission->name) ? 'checked' : '' }}>
-                                
-                                <label for="perm_{{ $permission->id }}" style="cursor: pointer; font-size: 13px; font-weight: bold;">
-                                    {{ strtoupper(str_replace('_', ' ', $permission->name)) }}
+                                <label class="flex items-center gap-4 cursor-pointer group">
+                                    <input type="radio" name="role" value="{{ $role->name }}" {{ $staff->hasRole($role->name) ? 'checked' : '' }} 
+                                           class="w-5 h-5 text-indigo-600 border-2 border-slate-200 focus:ring-indigo-500/20 focus:ring-offset-0 transition-all cursor-pointer">
+                                    <span class="text-[11px] font-medium uppercase tracking-widest group-hover:text-indigo-600 transition-colors {{ $staff->hasRole($role->name) ? 'text-indigo-600' : 'text-slate-400' }}">
+                                        {{ $role->name }}
+                                    </span>
                                 </label>
-                            </div>
-                        @endforeach
+                            @endforeach
+                        </div>
                     </div>
 
-                    <p style="font-size: 11px; color: #666; font-style: italic; margin-bottom: 20px;">
-                        * Unchecking an action will override the Role and immediately restrict this user.
-                    </p>
+                    <div class="h-px bg-slate-50 w-full"></div>
 
-                    <div style="border-top: 1px solid black; padding-top: 20px; display: flex; gap: 15px;">
-                        <button type="submit" style="background: black; color: white; border: none; padding: 10px 30px; font-weight: bold; cursor: pointer;">
-                            UPDATE STAFF SETTINGS
-                        </button>
-                        
-                        <a href="{{ route('admin.staff.index') }}" style="display: flex; align-items: center; text-decoration: underline; color: black; font-weight: bold;">
-                            CANCEL
+                    {{-- Permission Grid --}}
+                    <div class="space-y-8">
+                        <label class="block text-[11px] font-medium text-slate-400 uppercase tracking-[0.2em] text-center italic">Granular System Permissions</label>
+                        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-y-8 gap-x-12">
+                            @foreach($permissions as $permission)
+                                <label class="flex items-start gap-4 cursor-pointer group">
+                                    <input type="checkbox" 
+                                        name="permissions[]" 
+                                        value="{{ $permission->name }}" 
+                                        class="w-5 h-5 mt-0.5 text-indigo-600 border-2 border-slate-300 rounded focus:ring-indigo-500/20 focus:ring-offset-0 transition-all cursor-pointer"
+                                        {{ $staff->hasDirectPermission($permission->name) ? 'checked' : '' }}>
+                                    
+                                    <div class="flex flex-col">
+                                        <span class="text-[11px] font-medium text-slate-600 uppercase tracking-widest group-hover:text-indigo-600 transition-colors">
+                                            {{ str_replace(' ', '_', $permission->name) }}
+                                        </span>
+                                    </div>
+                                </label>
+                            @endforeach
+                        </div>
+                    </div>
+
+                    {{-- Footer Actions --}}
+                    <div class="pt-10 border-t border-slate-50 flex flex-col sm:flex-row items-center justify-between gap-6">
+                        <a href="{{ route('admin.staff.index') }}" 
+                           class="text-[10px] font-medium uppercase tracking-[0.2em] text-slate-300 hover:text-rose-500 transition-colors order-2 sm:order-1">
+                            DISCARD CHANGES
                         </a>
+                        
+                        <x-primary-button type="submit" class="!font-medium !bg-[#475569] hover:!bg-[#334155] ring-4 ring-slate-500/5 px-10 py-3.5 !rounded-full shadow-xl transition-all active:scale-95 order-1 sm:order-2 w-full sm:w-auto text-center justify-center">
+                            UPDATE ARCHITECTURE
+                        </x-primary-button>
                     </div>
                 </form>
             </div>
