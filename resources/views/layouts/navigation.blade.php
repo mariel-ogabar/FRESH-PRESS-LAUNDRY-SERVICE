@@ -1,4 +1,9 @@
 <nav x-data="{ open: false }" class="bg-white border-b border-gray-100 sticky top-0 z-50">
+    {{-- 1. ANTI-FLASH STYLE: This hides the menu until Alpine is ready --}}
+    <style>
+        [x-cloak] { display: none !important; }
+    </style>
+
     <div class="max-w-[90rem] mx-auto px-4 md:px-10">
         <div class="flex justify-between h-20"> 
             
@@ -49,7 +54,7 @@
                         {{-- Admin/Staff: Service Management --}}
                         @can('manage services')
                             <x-nav-link :href="route('admin.services.index')" :active="request()->routeIs('admin.services.*')">Services</x-nav-link>
-                        @endhasanyrole
+                        @endcan
                     @endguest
                 </div>
 
@@ -68,8 +73,9 @@
         </div>
     </div>
 
-    {{-- Dropdown Menu (Responsive & Permissions Enforced) --}}
+    {{-- Dropdown Menu (Fixed with x-cloak to stop popping out on reload) --}}
     <div x-show="open" 
+         x-cloak
          x-transition:enter="transition ease-out duration-200"
          x-transition:enter-start="opacity-0 translate-y-4"
          x-transition:enter-end="opacity-100 translate-y-0"
