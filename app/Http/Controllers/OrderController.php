@@ -31,9 +31,6 @@ class OrderController extends Controller
     /**
      * Display the booking form.
      */
-/**
-     * Display the booking form.
-     */
     public function create(Request $request)
     {
         /** @var \App\Models\User $authUser */
@@ -65,7 +62,6 @@ class OrderController extends Controller
     public function show($id)
     {
         // Eager load everything needed for the tracking view
-        // including the audits (history)
         $order = Order::with([
             'user', 
             'laundryStatus', 
@@ -89,13 +85,11 @@ class OrderController extends Controller
         $authUser = Auth::user();
 
         return DB::transaction(function () use ($request, $authUser) {
-            // Using $request->validated() prevents Mass Assignment attacks
             $validated = $request->validated();
 
             if ($authUser->hasAnyRole(['ADMIN', 'STAFF']) || $authUser->can('create orders')) {
                 $customer = $this->orderService->getOrCreateCustomer($validated);
                 
-                // Ensure profile data is kept in sync
                 $customer->update([
                     'contact_no' => $validated['contact_no'] ?? $customer->contact_no,
                     'address'    => $validated['address'] ?? $customer->address,
@@ -144,11 +138,10 @@ class OrderController extends Controller
     }
 
     /**
-     * Update Laundry Stage with improved error reporting for development
+     * Update Laundry Stage 
      */
     public function updateStatus(UpdateStatusRequest $request, $id)
     {
-        // Use withoutGlobalScope to ensure Admin/Staff can find the order
         $order = Order::withoutGlobalScope('own_orders')->findOrFail($id);
         
         $this->authorize('updateStatus', Order::class);
@@ -159,8 +152,7 @@ class OrderController extends Controller
 
             if ($oldStatus !== $newStatus) {
                 // ONLY update the laundry status. 
-                // The MySQL Trigger (trg_LaundryStatus_Audit) will automatically 
-                // create the audit record in the background.
+                // The MySQL Trigger (trg_LaundryStatus_Audit) will automatically create the audit record in the background.
                 $order->laundryStatus->update(['current_status' => $newStatus]);
                 
                 return response()->json(['message' => 'Status updated successfully'], 200);
@@ -187,6 +179,28 @@ class OrderController extends Controller
         $order = Order::findOrFail($id);
         $order->collection->update(['collection_status' => $request->collection_status]);
         return response()->json(['message' => 'Collection updated'], 200);
+    }
+
+    /**
+     * Set Collection Schedule (Staff Pickup)
+     */
+    public function setCollectionSchedule(Request $request, $id)
+    {
+        if (!Auth::user()->can('update order status')) {
+            return response()->json(['message' => 'Permission Denied'], 403);
+        }
+
+        $request->validate([
+            'scheduled_date' => 'required|date'
+        ]);
+
+        $order = Order::findOrFail($id);
+        
+        $order->collection->update([
+            'scheduled_collection_date' => $request->scheduled_date
+        ]);
+        
+        return response()->json(['message' => 'Pickup schedule updated'], 200);
     }
 
     /**

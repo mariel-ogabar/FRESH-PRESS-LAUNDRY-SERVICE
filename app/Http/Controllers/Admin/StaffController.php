@@ -10,12 +10,12 @@ use Spatie\Permission\Models\Permission;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\Rules;
 use Illuminate\Support\Facades\Auth;
-use Spatie\Permission\PermissionRegistrar;
 
 class StaffController extends Controller
 {
     public function index()
     {
+        // Get only staff and admins, excluding customers
         $staffMembers = User::role(['ADMIN', 'STAFF'])->get();
         return view('admin.staff.index', compact('staffMembers'));
     }
@@ -35,24 +35,25 @@ class StaffController extends Controller
             'role' => ['required', 'exists:roles,name'],
         ]);
 
-        // Role column is gone, we just create the basic user
         $user = User::create([
             'name' => $request->name,
             'email' => $request->email,
             'password' => Hash::make($request->password),
         ]);
 
-        // Spatie handles the relationship in the pivot tables
         $user->assignRole($request->role);
 
-        return redirect()->route('admin.staff.index')->with('success', 'Staff account created.');
+        return redirect()->route('admin.staff.index')
+            ->with('success', 'Staff account created successfully.');
     }
 
     public function edit(User $staff)
     {
-        $roles = \Spatie\Permission\Models\Role::where('name', '!=', 'CUSTOMER')->get();
+        // Fetch roles excluding customers for the dropdown
+        $roles = Role::where('name', '!=', 'CUSTOMER')->get();
         
-        $permissions = \Spatie\Permission\Models\Permission::all();
+        // Fetch all available permissions for the checkbox grid
+        $permissions = Permission::all();
 
         return view('admin.staff.edit', compact('staff', 'roles', 'permissions'));
     }
@@ -60,28 +61,39 @@ class StaffController extends Controller
     public function update(Request $request, User $staff)
     {
         $request->validate([
+            'name' => ['required', 'string', 'max:255'],
+            'email' => ['required', 'string', 'email', 'max:255', 'unique:users,email,' . $staff->id],
             'permissions' => 'array',
-            'role' => 'required'
+            'role' => 'required|exists:roles,name'
         ]);
 
-        // Update basic info
+        // 1. Update basic account info
         $staff->update($request->only('name', 'email'));
 
+        // 2. Sync the Role
         $staff->syncRoles([$request->role]);
 
+        // 3. Sync Direct Permissions (Manual Overrides)
         $staff->syncPermissions($request->permissions ?? []);
 
-        return back()->with('success', 'Staff permissions updated. They can now perform authorized tracking actions.');
+        // 4. CRITICAL: Clear Spatie Cache so changes apply immediately
+        app()[\Spatie\Permission\PermissionRegistrar::class]->forgetCachedPermissions();
+
+        // 5. REDIRECT to Index (as requested) with success message
+        return redirect()->route('admin.staff.index')
+            ->with('success', 'Staff settings and permissions updated successfully.');
     }
 
     public function destroy(User $staff)
     {
+        // Prevent self-deletion
         if (Auth::id() === $staff->id) {
-            return back()->with('error', 'You cannot delete yourself.');
+            return back()->with('error', 'Security Alert: You cannot delete your own account.');
         }
 
         $staff->delete();
         
-        return redirect()->route('admin.staff.index')->with('success', 'Staff member removed.');
+        return redirect()->route('admin.staff.index')
+            ->with('success', 'Staff member has been removed from the system.');
     }
 }
