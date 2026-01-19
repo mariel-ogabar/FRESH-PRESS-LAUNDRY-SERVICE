@@ -8,7 +8,7 @@ class StoreAddonRequest extends FormRequest
 {
     public function authorize(): bool
     {
-        return $this->user()->hasRole('ADMIN');
+        return $this->user()->can('manage services');
     }
 
     public function rules(): array

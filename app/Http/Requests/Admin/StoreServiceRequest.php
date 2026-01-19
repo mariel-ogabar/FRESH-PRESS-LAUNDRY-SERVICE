@@ -12,7 +12,7 @@ class StoreServiceRequest extends FormRequest
     public function authorize(): bool
     {
         // Only Admins can create or update services
-        return $this->user()->hasRole('ADMIN');
+        return $this->user()->can('manage services');
     }
 
     /**

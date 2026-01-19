@@ -19,7 +19,7 @@
                                 <span class="text-indigo-600 lowercase tracking-normal text-[11px] font-semibold">{{ auth()->user()->name }}</span>
                             @else 
                                 PREMIUM LAUNDRY SERVICE 
-                            @endauth
+                            @endguest
                         </span>
                     </div>
                 </a>
@@ -28,7 +28,6 @@
             {{-- Desktop Navigation & User Trigger --}}
             <div class="flex items-center gap-6">
                 
-                {{-- 1. Desktop Links (Hidden on Mobile) --}}
                 <div class="hidden lg:flex lg:items-center lg:gap-2">
                     @guest
                         <x-nav-link :href="url('/')" :active="request()->is('/')">Home</x-nav-link>
@@ -39,33 +38,26 @@
                         {{-- Shared Dashboard --}}
                         <x-nav-link :href="route('dashboard')" :active="request()->routeIs('dashboard')">Dashboard</x-nav-link>
 
-                        {{-- CUSTOMER ROLE: Explicit Booking Link --}}
-                        @role('CUSTOMER')
+                        {{-- Use specific functional permission instead of Role --}}
+                        @can('create orders')
                             <x-nav-link :href="route('orders.create')" :active="request()->routeIs('orders.create')">
-                                {{ __('Book Service') }}
+                                {{-- Label logic can still be contextual based on role if preferred --}}
+                                {{ auth()->user()->hasRole('CUSTOMER') ? __('Book Service') : __('Walk-in Order') }}
                             </x-nav-link>
-                        @endrole
+                        @endcan
 
-                        {{-- STAFF/ADMIN ROLE: Walk-in Link --}}
-                        @hasanyrole('ADMIN|STAFF')
-                            <x-nav-link :href="route('orders.create')" :active="request()->routeIs('orders.create')">
-                                {{ __('Walk-in Order') }}
-                            </x-nav-link>
-                        @endhasanyrole
-
-                        {{-- Admin Only: Staff Management --}}
+                        {{-- Admin Specific Permissions --}}
                         @can('manage staff')
                             <x-nav-link :href="route('admin.staff.index')" :active="request()->routeIs('admin.staff.*')">Staff</x-nav-link>
                         @endcan
 
-                        {{-- Admin/Staff: Service Management --}}
                         @can('manage services')
                             <x-nav-link :href="route('admin.services.index')" :active="request()->routeIs('admin.services.*')">Services</x-nav-link>
                         @endcan
                     @endguest
                 </div>
 
-                {{-- 2. Action Menu Trigger --}}
+                {{-- Action Menu Trigger --}}
                 <button @click="open = ! open" 
                         class="flex items-center gap-3 p-2 pl-4 bg-gray-50 border border-gray-100 rounded-2xl hover:bg-gray-100 transition-all active:scale-95 group">
                     <span class="hidden md:block text-[10px] font-bold uppercase tracking-widest text-gray-500 group-hover:text-gray-900 transition-colors">Menu</span>
@@ -111,19 +103,11 @@
                     
                     <a href="{{ route('dashboard') }}" class="block px-4 py-2.5 text-xs font-bold uppercase tracking-widest text-gray-600 hover:bg-gray-50 rounded-xl">Dashboard</a>
                     
-                    {{-- Customer specific mobile link --}}
-                    @role('CUSTOMER')
+                    @can('create orders')
                         <a href="{{ route('orders.create') }}" class="block px-4 py-2.5 text-xs font-bold uppercase tracking-widest text-indigo-600 hover:bg-indigo-50 rounded-xl">
-                            Book Service
+                            {{ auth()->user()->hasRole('CUSTOMER') ? __('Book Service') : __('Walk-in Order') }}
                         </a>
-                    @endrole
-
-                    {{-- Staff/Admin specific mobile link --}}
-                    @hasanyrole('ADMIN|STAFF')
-                        <a href="{{ route('orders.create') }}" class="block px-4 py-2.5 text-xs font-bold uppercase tracking-widest text-gray-600 hover:bg-gray-50 rounded-xl">
-                            Walk-in Order
-                        </a>
-                    @endhasanyrole
+                    @endcan
 
                     @can('manage staff')
                         <a href="{{ route('admin.staff.index') }}" class="block px-4 py-2.5 text-xs font-bold uppercase tracking-widest text-gray-600 hover:bg-gray-50 rounded-xl">Staff</a>
