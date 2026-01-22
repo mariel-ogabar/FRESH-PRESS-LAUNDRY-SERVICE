@@ -27,10 +27,10 @@
             {{ $slot }}
         </main>
 
-        {{-- Simple Footer --}}
+        {{-- Footer --}}
         <footer class="py-12 bg-white text-center border-t border-gray-100">
             <p class="text-[10px] font-bold uppercase tracking-[0.4em] text-gray-300">
-                © 2026 FreshPress Laundry Service • Quality Reimagined
+                © 2026 FreshPress Laundry Service • GROUP 9 ORDER MANAGEMENT SYSTEM BSIT 3-2N
             </p>
         </footer>
     </div>
