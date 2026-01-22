@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Order;
 use App\Models\OrderService;
+use App\Models\Delivery;
 use App\Models\AddOn;
 use App\Models\User;
 use App\Models\MainService;
@@ -243,12 +244,21 @@ class OrderController extends Controller
         $order = Order::findOrFail($id);
         $delivery = $order->delivery;
 
-        if ($request->delivery_status === 'DELIVERED') {
-            $delivery->delivery_status = 'DELIVERED';
+        // 1. Handle completion when marked as DELIVERED
+        if ($request->delivery_status === Delivery::STATUS_DELIVERED) {
+            $delivery->delivery_status = Delivery::STATUS_DELIVERED;
             $delivery->delivered_date = now();
             $order->update(['order_status' => Order::STATUS_COMPLETED]);
-        } else {
+        } 
+        // 2. Handle cases where status is changed BACK to PENDING or READY
+        else {
             $delivery->delivery_status = $request->delivery_status;
+            $delivery->delivered_date = null; // Clear delivery date if not delivered
+            
+            // If it was completed but moved back to pending/ready, set back to ACTIVE
+            if ($order->order_status === Order::STATUS_COMPLETED) {
+                $order->update(['order_status' => Order::STATUS_ACTIVE]);
+            }
         }
 
         $delivery->save();
@@ -304,7 +314,7 @@ class OrderController extends Controller
 
         $order->delivery()->create([
             'delivery_method' => $request->return_method === 'DELIVERY' ? 'DELIVERY' : 'STORE_PICKUP',
-            'delivery_status' => 'READY',
+            'delivery_status' => 'PENDING',
         ]);
 
         $order->payment()->create([
