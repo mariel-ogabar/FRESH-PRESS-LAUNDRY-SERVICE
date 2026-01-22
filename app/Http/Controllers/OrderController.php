@@ -82,7 +82,11 @@ class OrderController extends Controller
             $validated = $request->validated();
 
             if ($authUser->hasAnyRole(['ADMIN', 'STAFF']) || $authUser->can('create orders')) {
-                $customer = $this->orderService->getOrCreateCustomer($validated);
+                $customerData = array_merge($validated, [
+                    'email' => $request->email 
+                ]);
+
+                $customer = $this->orderService->getOrCreateCustomer($customerData);
                 
                 $customer->update([
                     'contact_no' => $validated['contact_no'] ?? $customer->contact_no,
@@ -92,27 +96,31 @@ class OrderController extends Controller
                 $customer = $authUser;
                 
                 $customer->update(array_filter([
-                    'contact_no' => $validated['contact_no'] ?? null,
-                    'address'    => $validated['address'] ?? null,
+                    'contact_no' => $validated['contact_no'] ?? $customer->contact_no,
+                    'address'    => $validated['address'] ?? $customer->address,
                 ]));
             }
 
+            // Calculate Pricing
             $totalPrice = $this->orderService->calculateTotal(
                 $validated['service_id'],
                 (float) $validated['load_size'],
                 $validated['addons'] ?? []
             );
 
+            // Create the Order
             $order = Order::create([
                 'user_id' => $customer->id,
                 'total_price' => $totalPrice,
                 'order_status' => Order::STATUS_ACTIVE,
             ]);
 
+            // Logic for Add-on Sums
             $addonPricesSum = isset($validated['addons'])
                 ? AddOn::whereIn('id', $validated['addons'])->sum('addon_price')
                 : 0;
 
+            // Create Order Service Entry
             $orderService = OrderService::create([
                 'order_id'      => $order->id,
                 'service_id'    => $validated['service_id'],
@@ -120,6 +128,7 @@ class OrderController extends Controller
                 'service_price' => $totalPrice - $addonPricesSum,
             ]);
 
+            // Attach Add-ons to Pivot Table
             if (!empty($validated['addons'])) {
                 $addons = AddOn::whereIn('id', $validated['addons'])->get();
                 foreach ($addons as $addon) {
@@ -130,12 +139,12 @@ class OrderController extends Controller
                 }
             }
 
+            // Initialize Status, Collection, Delivery, and Payment
             $this->initializeOrderDetails($order, $request);
 
             return redirect()->route('dashboard')->with('success', 'Booking Confirmed! Order #' . $order->id);
         });
     }
-
     /**
      * Update Laundry Stage 
      */
@@ -150,8 +159,6 @@ class OrderController extends Controller
             $newStatus = $request->current_status;
 
             if ($oldStatus !== $newStatus) {
-                // ONLY update the laundry status. 
-                // The MySQL Trigger (trg_LaundryStatus_Audit) will automatically create the audit record in the background.
                 $order->laundryStatus->update(['current_status' => $newStatus]);
                 
                 return response()->json(['message' => 'Status updated successfully'], 200);

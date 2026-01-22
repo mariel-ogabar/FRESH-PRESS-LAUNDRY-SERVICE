@@ -25,17 +25,21 @@ class OrderProcessingService
      */
     public function getOrCreateCustomer(array $data)
     {
-        // 1. Search for user including soft-deleted ones to prevent unique constraint errors
-        $user = User::withTrashed()->where('email', $data['email'])->first();
+        $email = $data['email'] ?? null;
+
+        if (!$email) {
+            throw new \InvalidArgumentException('The email field is required to process or identify a customer.');
+        }
+
+        $user = User::withTrashed()->where('email', $email)->first();
 
         if ($user) {
-            // Restore if they were deleted
             if ($user->trashed()) {
                 $user->restore();
             }
 
-            // 2. Update existing user details if they provided new info during walk-in
             $user->update([
+                'name'       => $data['customer_name'] ?? $user->name,
                 'contact_no' => $data['contact_no'] ?? $user->contact_no,
                 'address'    => $data['address'] ?? $user->address,
             ]);
@@ -43,16 +47,14 @@ class OrderProcessingService
             return $user;
         }
 
-        // 3. Create new user if not found
         $newUser = User::create([
             'name'       => $data['customer_name'] ?? 'Walk-in Customer',
-            'email'      => $data['email'],
-            'password'   => Hash::make('FreshPress123'), 
+            'email'      => $email,
+            'password'   => \Illuminate\Support\Facades\Hash::make('FreshPress123'), 
             'contact_no' => $data['contact_no'] ?? null,
             'address'    => $data['address'] ?? null,
         ]);
 
-        // Assign Spatie Role if using laravel-permission
         if (method_exists($newUser, 'assignRole')) {
             $newUser->assignRole('CUSTOMER');
         }
