@@ -2,7 +2,7 @@
 
 <div class="w-full">
     @if($label)
-        <label class="block text-[11px] font-black text-slate-700 uppercase tracking-widest mb-2 ml-1">
+        <label class="text-[10px] font-bold text-black uppercase tracking-[0.25em]">
             {{ $label }}
         </label>
     @endif
