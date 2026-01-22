@@ -28,16 +28,13 @@
 
     <div class="py-20 px-4 md:px-10 max-w-7xl mx-auto">
         {{-- Header Section --}}
-        <div class="text-center mb-16">
-            <h1 class="font-normal text-3xl text-slate-700 uppercase tracking-[0.2em] leading-none mb-4">
-                {{ __('Our Services') }}
-            </h1>
-            <p class="text-slate-400 font-medium uppercase tracking-[0.18em] text-[10px]">
-                Professional laundry services tailored to your needs
-            </p>
-            <div class="mt-6 flex justify-center">
-                <div class="w-12 h-[1px] bg-[#7c4dff]/30"></div>
-            </div>
+        <div class="flex flex-col items-center justify-center text-center gap-6 px-2 md:px-4 mb-16">
+            <div>
+                <h2 class="font-normal text-3xl text-slate-700 uppercase tracking-widest leading-none"> OUR SERVICES</h2>
+                <p class="text-[11px] font-medium text-slate-400 uppercase tracking-[0.18em] mt-3">
+                    {{ __('Order Operations & Inventory Control') }}
+                </p>
+            </div>                
         </div>
 
         {{-- Services Grid --}}

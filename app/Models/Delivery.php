@@ -5,6 +5,7 @@ use Illuminate\Database\Eloquent\Model;
 
 class Delivery extends Model {
     
+    const STATUS_PENDING = 'PENDING';
     const STATUS_READY = 'READY';
     const STATUS_DELIVERED = 'DELIVERED';
     

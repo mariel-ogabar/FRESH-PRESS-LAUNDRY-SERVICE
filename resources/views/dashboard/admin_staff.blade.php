@@ -224,10 +224,10 @@
                                             <x-order-status-select :currentStatus="$order->delivery->delivery_status" :terminal="true" :options="[]" />
                                         @else
                                             @can('update order status')
-                                                <x-order-status-select :currentStatus="$order->delivery->delivery_status" :terminal="$terminalState" :options="['READY'=>'READY','DELIVERED'=>'DELIVERED']" @change="performUpdate('{{ route('orders.updateDelivery', $order->id) }}', { delivery_status: $el.value }, () => { window.location.reload() })" />
+                                                <x-order-status-select :currentStatus="$order->delivery->delivery_status" :terminal="$terminalState" :options="['PENDING' => 'PENDING', 'READY' => 'READY', 'DELIVERED' => 'DELIVERED']" @change="performUpdate('{{ route('orders.updateDelivery', $order->id) }}', { delivery_status: $el.value }, () => { window.location.reload() })" />
                                             @else
                                                 @php
-                                                    $isDelivered = $order->delivery->delivery_status === 'DELIVERED' || $order->delivery->delivery_status === 'READY';
+                                                    $isDelivered = $order->delivery->delivery_status === 'DELIVERED' ||  $order->delivery->delivery_status === 'READY';
                                                     $delStyle = $isDelivered ? 'bg-emerald-50 text-emerald-600 border-emerald-100' : 'bg-amber-50 text-amber-600 border-amber-100';
                                                 @endphp
                                                 <div class="{{ $delStyle }} px-6 py-2 rounded-2xl border text-[10px] font-bold uppercase tracking-widest flex items-center gap-2 shadow-sm">
