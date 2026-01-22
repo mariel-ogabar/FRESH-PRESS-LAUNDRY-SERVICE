@@ -16,7 +16,8 @@ return new class extends Migration
             $table->foreignId('order_id')->constrained()->cascadeOnDelete();
             $table->enum('delivery_method', ['STORE_PICKUP','DELIVERY']);
             $table->enum('delivery_status', ['READY','DELIVERED'])->default('READY');
-            $table->dateTime('delivery_date')->nullable();
+            $table->timestamp('scheduled_delivery_date')->nullable();
+            $table->dateTime('delivered_date')->nullable();
             $table->timestamps();
         });
     }
