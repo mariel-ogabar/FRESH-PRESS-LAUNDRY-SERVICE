@@ -77,74 +77,49 @@ class OrderController extends Controller
      */
     public function store(StoreOrderRequest $request)
     {
-        $authUser = Auth::user();
-
-        return DB::transaction(function () use ($request, $authUser) {
+        return DB::transaction(function () use ($request) {
+            $authUser = Auth::user();
             $validated = $request->validated();
 
-            if ($authUser->hasAnyRole(['ADMIN', 'STAFF']) || $authUser->can('create orders')) {
-                $customerData = array_merge($validated, [
-                    'email' => $request->email 
-                ]);
+            // 1. Resolve Customer
+            $customer = $this->resolveCustomer($authUser, $validated, $request->email);
 
-                $customer = $this->orderService->getOrCreateCustomer($customerData);
-                
-                $customer->update([
-                    'contact_no' => $validated['contact_no'] ?? $customer->contact_no,
-                    'address'    => $validated['address'] ?? $customer->address,
-                ]);
-            } else {
-                $customer = $authUser;
-                
-                $customer->update(array_filter([
-                    'contact_no' => $validated['contact_no'] ?? $customer->contact_no,
-                    'address'    => $validated['address'] ?? $customer->address,
-                ]));
-            }
-
-            // Calculate Pricing
+            // 2. Pricing
             $totalPrice = $this->orderService->calculateTotal(
                 $validated['service_id'],
                 (float) $validated['load_size'],
                 $validated['addons'] ?? []
             );
 
-            // Create the Order
+            // 3. Create Order
             $order = Order::create([
                 'user_id' => $customer->id,
                 'total_price' => $totalPrice,
                 'order_status' => Order::STATUS_ACTIVE,
             ]);
 
-            // Logic for Add-on Sums
-            $addonPricesSum = isset($validated['addons'])
-                ? AddOn::whereIn('id', $validated['addons'])->sum('addon_price')
-                : 0;
+            // 4. Attach Items
+            $this->orderService->attachServicesAndAddons($order, $validated, $totalPrice);
 
-            // Create Order Service Entry
-            $orderService = OrderService::create([
-                'order_id'      => $order->id,
-                'service_id'    => $validated['service_id'],
-                'quantity'      => $validated['load_size'],
-                'service_price' => $totalPrice - $addonPricesSum,
-            ]);
-
-            // Attach Add-ons to Pivot Table
-            if (!empty($validated['addons'])) {
-                $addons = AddOn::whereIn('id', $validated['addons'])->get();
-                foreach ($addons as $addon) {
-                    $orderService->addons()->attach($addon->id, [
-                        'addon_qty'   => 1,
-                        'addon_price' => $addon->addon_price
-                    ]);
-                }
-            }
-
-            // Initialize Status, Collection, Delivery, and Payment
+            // 5. Initialize Details (Sets Delivery to PENDING)
             $this->initializeOrderDetails($order, $request);
 
             return redirect()->route('dashboard')->with('success', 'Booking Confirmed! Order #' . $order->id);
         });
+    }
+
+    private function resolveCustomer($authUser, $validated, $email)
+    {
+        if ($authUser->hasAnyRole(['ADMIN', 'STAFF']) || $authUser->can('create orders')) {
+            return $this->orderService->getOrCreateCustomer(array_merge($validated, ['email' => $email]));
+        }
+
+        $authUser->update(array_filter([
+            'contact_no' => $validated['contact_no'] ?? $authUser->contact_no,
+            'address'    => $validated['address'] ?? $authUser->address,
+        ]));
+
+        return $authUser;
     }
     /**
      * Update Laundry Stage 
@@ -244,18 +219,13 @@ class OrderController extends Controller
         $order = Order::findOrFail($id);
         $delivery = $order->delivery;
 
-        // 1. Handle completion when marked as DELIVERED
         if ($request->delivery_status === Delivery::STATUS_DELIVERED) {
             $delivery->delivery_status = Delivery::STATUS_DELIVERED;
             $delivery->delivered_date = now();
             $order->update(['order_status' => Order::STATUS_COMPLETED]);
-        } 
-        // 2. Handle cases where status is changed BACK to PENDING or READY
-        else {
+        } else {
             $delivery->delivery_status = $request->delivery_status;
-            $delivery->delivered_date = null; // Clear delivery date if not delivered
-            
-            // If it was completed but moved back to pending/ready, set back to ACTIVE
+            $delivery->delivered_date = null;
             if ($order->order_status === Order::STATUS_COMPLETED) {
                 $order->update(['order_status' => Order::STATUS_ACTIVE]);
             }
@@ -264,7 +234,6 @@ class OrderController extends Controller
         $delivery->save();
         return response()->json(['message' => 'Status updated'], 200);
     }
-
     /**
      * Set Delivery Schedule
      */
