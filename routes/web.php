@@ -18,6 +18,10 @@ Route::get('/', function () {
     return view('welcome');
 });
 
+// 1. PUBLIC SERVICE VIEW: No middleware, strictly for viewing.
+// Use 'publicIndex' to separate viewing logic from management logic.
+Route::get('/services', [ServiceController::class, 'publicIndex'])->name('services.index');
+
 /**
  * DASHBOARD ACCESS
  */
@@ -61,7 +65,7 @@ Route::middleware('auth')->group(function () {
     Route::prefix('admin')->name('admin.')->group(function () {
         
         // Staff Management
-        Route::middleware('permission:manage staff')->group(function () {
+        Route::middleware('role_or_permission:ADMIN|manage staff')->group(function () {
             Route::get('/staff', [StaffController::class, 'index'])->name('staff.index');
             Route::get('/staff/create', [StaffController::class, 'create'])->name('staff.create');
             Route::post('/staff', [StaffController::class, 'store'])->name('staff.store');
@@ -70,8 +74,8 @@ Route::middleware('auth')->group(function () {
             Route::delete('/staff/{staff}', [StaffController::class, 'destroy'])->name('staff.destroy');
         });
 
-        // Service & Pricing Management (Active/Inactive Toggle Focus)
-        Route::middleware('permission:manage services')->group(function () {
+        // Service & Pricing Management (Changed to role_or_permission to prevent 403)
+        Route::middleware('role_or_permission:ADMIN|manage services')->group(function () {
             // Main Services
             Route::get('/services', [ServiceController::class, 'index'])->name('services.index');
             Route::post('/services', [ServiceController::class, 'storeService'])->name('services.store');
@@ -81,7 +85,7 @@ Route::middleware('auth')->group(function () {
             // Addon Routes
             Route::post('/addons', [ServiceController::class, 'storeAddon'])->name('addons.store');
             Route::patch('/addons/{id}', [ServiceController::class, 'updateAddon'])->name('addons.update');
-            Route::patch('/addons/{id}/toggle', [ServiceController::class, 'toggleAddon'])->name('addons.toggle'); // Eto ang nawawalang route kanina
+            Route::patch('/addons/{id}/toggle', [ServiceController::class, 'toggleAddon'])->name('addons.toggle');
         });
     });
 
