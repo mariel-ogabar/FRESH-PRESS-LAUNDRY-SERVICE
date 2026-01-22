@@ -47,7 +47,7 @@ class OrderProcessingService
         $newUser = User::create([
             'name'       => $data['customer_name'] ?? 'Walk-in Customer',
             'email'      => $data['email'],
-            'password'   => Hash::make(Str::random(12)), // Secure random password
+            'password'   => Hash::make('FreshPress123'), 
             'contact_no' => $data['contact_no'] ?? null,
             'address'    => $data['address'] ?? null,
         ]);
