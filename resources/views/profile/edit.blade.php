@@ -1,25 +1,29 @@
 <x-app-layout>
-    <x-slot name="header">
-        <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
-            <div>
-                <h2 class="font-black text-xl text-gray-800 leading-tight uppercase tracking-tighter">
-                    {{ __('Account Settings') }}
-                </h2>
-                <p class="text-[11px] font-bold text-gray-400 uppercase tracking-tight mt-1">
-                    {{ __('Manage your personal credentials and security preferences.') }}
-                </p>
-            </div>
-            
-            <x-secondary-button :href="route('dashboard')">
-                <svg class="w-3 h-3 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path>
-                </svg>
-                {{ __('BACK TO DASHBOARD') }}
-            </x-secondary-button>
-        </div>
-    </x-slot>
 
     <div class="py-12">
+
+        <div class="flex flex-col items-center justify-center text-center gap-6 px-2 md:px-4 mb-16">
+            {{-- Top: Centered Text --}}
+            <div>
+                <h2 class="font-normal text-3xl text-slate-700 uppercase tracking-[0.2em] leading-none">
+                    {{ __('Account Settings') }}
+                </h2>
+                <p class="text-[11px] font-medium text-slate-400 uppercase tracking-[0.18em] mt-3">
+                    {{ __('Manage your personal credentials and security preferences.') }}
+                </p>
+            </div>                
+
+            {{-- Bottom: Centered Action Button --}}
+            <div class="flex shrink-0">
+                <x-primary-button 
+                    onclick="window.location='{{ route('dashboard') }}'" 
+                    class="!py-4 !px-10 !rounded-full !text-[11px] !font-black !uppercase !tracking-widest shadow-xl shadow-indigo-100 !bg-[#7c4dff] !text-white border-none transition-all hover:scale-105 active:scale-95"
+                >
+                    {{ __('BACK TO DASHBOARD') }}
+                </x-primary-button>
+            </div>
+        </div>
+
         <div class="max-w-4xl mx-auto sm:px-6 lg:px-8 space-y-10">
             
             {{-- Profile Information Section --}}

@@ -1,16 +1,13 @@
 <x-app-layout>
-    <x-slot name="header">
-        <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 px-2 md:px-4">
+    <div class="py-8 px-4 md:px-10 max-w-[90rem] mx-auto space-y-12">
+
+        <div class="flex flex-col md:flex-row md:items-center justify-center gap-4 px-2 md:px-4">
             <div>
-                <h2 class="font-medium text-xl text-slate-800 uppercase tracking-tighter">{{ __('Service Management') }}</h2>
-                <p class="text-[11px] font-medium text-slate-500 uppercase tracking-widest mt-1">{{ __('Define operational service types and premium pricing tiers.') }}</p>
+                <h2 class="font-normal text-3xl text-slate-700 uppercase tracking-widest leading-none">{{ __('Service Management') }}</h2>
+                <p class="text-[11px] font-medium text-slate-500 uppercase tracking-widest mt-2">{{ __('Define operational service types and premium pricing tiers.') }}</p>
             </div>
         </div>
-    </x-slot>
-
-    <div class="py-8 px-4 md:px-10 max-w-[90rem] mx-auto space-y-12">
         
-        {{-- Standardized Alert --}}
         @if(session('success'))
             <div class="bg-emerald-50 border border-emerald-100 p-4 rounded-xl flex items-center gap-3 shadow-sm animate-fade-in">
                 <svg class="w-4 h-4 text-emerald-500" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/></svg>
@@ -71,7 +68,9 @@
 
                             <template x-if="!editing">
                                 <td class="px-4 py-8">
-                                    <x-secondary-button @click="editing = true" class="!bg-[#475569] !text-white !border-none !text-[9px] !font-medium tracking-widest py-2 px-5 rounded-lg shadow-sm transition-all active:scale-95 uppercase">MODIFY</x-secondary-button>
+                                    <x-secondary-button @click="editing = true">
+                                        MODIFY
+                                    </x-secondary-button>
                                 </td>
                             </template>
 
@@ -91,7 +90,7 @@
                                     </div>
 
                                     <div class="flex items-center gap-4">
-                                        <x-primary-button class="!bg-indigo-600 !font-medium uppercase tracking-widest !rounded-full py-3 px-8 shadow-lg shadow-indigo-100">SAVE</x-primary-button>
+                                        <x-primary-button>SAVE</x-primary-button>
                                         <button type="button" @click="editing = false" class="text-[10px] font-medium text-slate-400 hover:text-rose-500 uppercase tracking-widest px-2 transition-colors">DISCARD</button>
                                     </div>
                                 </form>
@@ -115,7 +114,7 @@
                         <option value="PER_ITEM">PER ITEM</option>
                     </select>
 
-                    <x-primary-button class="!bg-[#475569] !font-medium uppercase tracking-widest py-3.5 !rounded-full shadow-xl transition-all active:scale-95">
+                    <x-primary-button>
                         + ADD SERVICE
                     </x-primary-button>
                 </form>
@@ -166,7 +165,9 @@
 
                             <template x-if="!editing">
                                 <td class="px-4 py-8">
-                                    <x-secondary-button @click="editing = true" class="!bg-[#475569] !text-white !border-none !text-[9px] !font-medium tracking-widest py-2 px-5 rounded-lg shadow-sm transition-all active:scale-95 uppercase">MODIFY</x-secondary-button>
+                                    <x-secondary-button @click="editing = true">
+                                        MODIFY
+                                    </x-secondary-button>
                                 </td>
                             </template>
 
@@ -178,7 +179,7 @@
                                     <x-form-input label="Premium Rate" type="number" step="0.01" name="addon_price" :value="$addon->addon_price" required class="!font-medium !rounded-xl" />
                                     
                                     <div class="flex items-center gap-4">
-                                        <x-primary-button class="!bg-indigo-600 !font-medium uppercase tracking-widest !rounded-full py-3 px-8 shadow-lg shadow-indigo-100 w-full sm:w-auto">SAVE</x-primary-button>
+                                        <x-primary-button>SAVE</x-primary-button>
                                         <button type="button" @click="editing = false" class="text-[10px] font-medium text-slate-400 hover:text-rose-500 uppercase tracking-widest transition-colors">DISCARD</button>
                                     </div>
                                 </form>
@@ -196,7 +197,7 @@
                     @csrf
                     <x-form-input name="addon_name" placeholder="DESCRIBE UTILITY EXTRA" required class="!font-medium uppercase !rounded-xl" />
                     <x-form-input type="number" step="0.01" name="addon_price" placeholder="RATE (0.00)" required class="!font-medium !rounded-xl" />
-                    <x-primary-button class="!bg-[#475569] !font-medium uppercase tracking-widest py-3.5 !rounded-full shadow-xl transition-all active:scale-95">
+                    <x-primary-button>
                         + ADD ONS
                     </x-primary-button>
                 </form>

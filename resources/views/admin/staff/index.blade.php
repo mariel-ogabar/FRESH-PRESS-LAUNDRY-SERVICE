@@ -1,19 +1,26 @@
 <x-app-layout>
-    <x-slot name="header">
-        <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 px-2 md:px-4">
-            <div>
-                <h2 class="font-medium text-xl text-slate-800 uppercase tracking-tighter">{{ __('Staff Management') }}</h2>
-                <p class="text-[11px] font-medium text-slate-400 uppercase tracking-widest mt-1">{{ __('Manage team access and permissions.') }}</p>
-            </div>
-            <x-primary-button onclick="window.location='{{ route('admin.staff.create') }}'" 
-                class="!bg-[#475569] hover:!bg-[#334155] !text-white !font-medium px-6 py-2.5 rounded-full shadow-lg transition-all active:scale-95 text-center justify-center uppercase">
-                {{ __('+ ADD STAFF') }}
-            </x-primary-button>
-        </div>
-    </x-slot>
-
+    
     <div class="py-8 px-4 md:px-10 max-w-[90rem] mx-auto space-y-10">
-        
+
+<div class="flex flex-col items-center justify-center text-center gap-6 px-2 md:px-4 mb-16">
+    <div>
+        <h2 class="font-normal text-3xl text-slate-700 uppercase tracking-widest leading-none">
+            {{ __('Staff Management') }}
+        </h2>
+        <p class="text-[11px] font-medium text-slate-400 uppercase tracking-[0.18em] mt-3">
+            {{ __('Manage team access and permissions.') }}
+        </p>
+    </div>                
+
+    <div class="flex shrink-0">
+        <x-primary-button 
+            onclick="window.location='{{ route('admin.staff.create') }}'" 
+            class="!py-4 !px-10 !rounded-full !text-[11px] !font-black !uppercase !tracking-widest shadow-xl shadow-indigo-100 !bg-[#7c4dff] !text-white border-none transition-all hover:scale-105 active:scale-95"
+        >
+            {{ __('+ ADD STAFF') }}
+        </x-primary-button>
+    </div>
+</div>
         {{-- Validation & Action Feedback --}}
         @if(session('success'))
             <div class="bg-emerald-50 border border-emerald-100 p-4 rounded-xl flex items-center gap-3 animate-fade-in shadow-sm">
@@ -73,8 +80,7 @@
                             <td class="px-4 py-8">
                                 <div class="flex items-center justify-center gap-4">
                                     @if(Auth::id() !== $member->id)
-                                        <x-secondary-button onclick="window.location='{{ route('admin.staff.edit', $member->id) }}'" 
-                                            class="!bg-[#475569] hover:!bg-[#334155] !text-white !border-none !text-[9px] !font-medium tracking-widest py-2 px-5 rounded-lg shadow-sm transition-all active:scale-90 uppercase">
+                                        <x-secondary-button onclick="window.location='{{ route('admin.staff.edit', $member->id) }}'">
                                             EDIT
                                         </x-secondary-button>
 

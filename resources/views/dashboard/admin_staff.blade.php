@@ -1,32 +1,34 @@
 <x-app-layout>
-    {{-- 1. ADD THIS STYLE: Prevent the "pop" on reload --}}
     <style>
         [x-cloak] { display: none !important; }
     </style>
 
-    <x-slot name="header">
-        <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 px-2 md:px-4">
+    <div x-data="orderSystem()" class="py-8 px-4 md:px-10 max-w-[90rem] mx-auto space-y-10">
+
+        <div class="flex flex-col items-center justify-center text-center gap-6 px-2 md:px-4 mb-16">
             <div>
-                <h2 class="font-medium text-xl text-slate-800 uppercase tracking-tighter">
+                <h2 class="font-normal text-3xl text-slate-700 uppercase tracking-widest leading-none">
                     {{ auth()->user()->hasRole('ADMIN') ? __('Admin Dashboard') : __('Staff Dashboard') }}
                 </h2>
-                <p class="text-[11px] font-medium text-slate-500 uppercase tracking-widest mt-1">
+                <p class="text-[11px] font-medium text-slate-400 uppercase tracking-[0.18em] mt-3">
                     {{ __('Order Operations & Inventory Control') }}
                 </p>
-            </div>
+            </div>                
 
+            {{-- Bottom: Centered Action Button --}}
             @can('create orders')
-                <x-primary-button onclick="window.location='{{ route('orders.create') }}'" 
-                    class="!bg-[#475569] hover:!bg-[#334155] !text-white !font-medium px-6 py-2.5 rounded-full shadow-lg transition-all active:scale-95 text-center justify-center uppercase">
-                    {{ __('+ ADD WALK-IN') }}
-                </x-primary-button>
+                <div class="flex shrink-0">
+                    <x-primary-button 
+                        onclick="window.location='{{ route('orders.create') }}'" 
+                        class="!py-4 !px-10 !rounded-full !text-[11px] !font-black !uppercase !tracking-widest shadow-xl shadow-indigo-100 !bg-[#7c4dff] !text-white border-none transition-all hover:scale-105 active:scale-95"
+                    >
+                        {{ __('+ ADD WALK-IN') }}
+                    </x-primary-button>
+                </div>
             @endcan
         </div>
-    </x-slot>
 
-    <div x-data="orderSystem()" class="py-8 px-4 md:px-10 max-w-[90rem] mx-auto space-y-10">
-        
-        {{-- NEW: SESSION SUCCESS ALERT --}}
+        {{-- SESSION SUCCESS ALERT --}}
         @if(session('success'))
             <div class="bg-emerald-50 border border-emerald-100 p-4 rounded-2xl flex items-center gap-3 animate-fade-in shadow-sm">
                 <div class="flex-shrink-0 bg-white p-1 rounded-full shadow-sm">

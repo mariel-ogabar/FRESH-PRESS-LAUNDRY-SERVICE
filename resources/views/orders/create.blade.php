@@ -28,28 +28,35 @@
 
         <style>[x-cloak] { display: none !important; }</style>
 
-        <x-slot name="header">
-            <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 px-2 md:px-4">
+        <div class="py-8 px-4 md:px-10 max-w-[90rem] mx-auto">
+
+            <div class="flex flex-col items-center justify-center text-center gap-6 px-2 md:px-4 mb-16">
                 <div>
-                    <h2 class="font-medium text-xl text-slate-800 uppercase tracking-tighter">{{ __('Add Walk-In Order') }}</h2>
-                    <p class="text-[11px] font-medium text-slate-500 uppercase tracking-widest mt-1">
-                        @hasanyrole('ADMIN|STAFF') {{ request('email') ? 'Processing: ' . request('email') : 'Preparing new walk-in order.' }} @else Schedule your laundry service. @endhasanyrole
+                    <h2 class="font-normal text-3xl text-slate-700 uppercase tracking-widest leading-none">
+                        {{ __('Add Walk-In Order') }}
+                    </h2>
+                    <p class="text-[11px] font-medium text-slate-400 uppercase tracking-[0.18em] mt-3">
+                        @hasanyrole('ADMIN|STAFF') 
+                            {{ request('email') ? __('PROCESSING: ') . request('email') : __('Preparing new walk-in order.') }} 
+                        @else 
+                            {{ __('Schedule your laundry service.') }} 
+                        @endhasanyrole
                     </p>
-                </div>
-                
+                </div>                
+
                 @hasanyrole('ADMIN|STAFF')
                     @if(request('email'))
-                        <x-primary-button onclick="window.location='{{ route('orders.create') }}'" 
-                        class="!bg-[#475569] hover:!bg-[#334155] !text-white !font-medium px-6 py-2.5 rounded-full shadow-lg transition-all active:scale-95 text-center justify-center uppercase">
-                            {{ __('Change Target Email') }}
-                        </x-primary-button>
+                        <div class="flex shrink-0">
+                            <x-primary-button 
+                                onclick="window.location='{{ route('orders.create') }}'" 
+                                class="!py-4 !px-10 !rounded-full !text-[11px] !font-black !uppercase !tracking-widest shadow-xl shadow-indigo-100 !bg-[#7c4dff] !text-white border-none transition-all hover:scale-105 active:scale-95"
+                            >
+                                {{ __('Change Target Email') }}
+                            </x-primary-button>
+                        </div>
                     @endif
                 @endhasanyrole
             </div>
-        </x-slot>
-
-        <div class="py-8 px-4 md:px-10 max-w-[90rem] mx-auto">
-            
             {{-- Walk-in Verification Modal --}}
             <div x-show="showLookup" x-cloak class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[40] flex items-center justify-center p-4">
                 <div class="bg-white rounded-[2rem] shadow-2xl border border-slate-100 w-full max-w-lg overflow-hidden animate-fade-in">
@@ -63,7 +70,7 @@
                         <form action="{{ route('orders.create') }}" method="GET" class="space-y-8">
                             <x-form-input label="Customer Email Identifier" name="email" required placeholder="CUSTOMER@EMAIL.COM" class="!rounded-xl uppercase shadow-sm font-medium" />
                             <div class="pt-6 border-t border-slate-50 flex items-center justify-end">
-                                 <x-primary-button class="!bg-[#475569] !rounded-full !py-3 !px-10 !text-[10px] !font-medium tracking-[0.2em]">VERIFY IDENTITY</x-primary-button>
+                                 <x-primary-button >VERIFY IDENTITY</x-primary-button>
                             </div>
                         </form>
                     </div>
@@ -212,7 +219,7 @@
                             </div>
 
                             <div class="flex justify-center pt-2">
-                                <x-secondary-button type="submit" class="!bg-[#475569] hover:!bg-[#334155] !text-white !border-none !text-[9px] !font-medium tracking-widest py-3 px-8 rounded-lg shadow-sm transition-all active:scale-95 uppercase">
+                                <x-secondary-button type="submit">
                                     Confirm Booking
                                 </x-secondary-button>
                             </div>

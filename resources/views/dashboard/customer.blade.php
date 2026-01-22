@@ -2,20 +2,27 @@
     <style>[x-cloak] { display: none !important; }</style>
 
     <div x-data="orderSystem()">
-        <x-slot name="header">
-            <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 px-2 md:px-4">
-                <div>
-                    <h1 class="font-medium text-xl text-slate-800 uppercase tracking-tighter">{{ __('Service Protocols') }}</h1>
-                    <p class="text-[11px] font-medium text-slate-500 uppercase tracking-widest mt-1">Operational history and real-time tracking</p>
-                </div>
-                <x-primary-button onclick="window.location='{{ route('orders.create') }}'" 
-                    class="!bg-[#475569] hover:!bg-[#334155] !rounded-full !py-3 !px-8 !text-[10px] !font-medium tracking-[0.2em] shadow-lg transition-all active:scale-95 uppercase">
-                    {{ __('BOOK NEW SERVICE') }}
-                </x-primary-button>
-            </div>
-        </x-slot>
-
         <div class="py-8 px-4 md:px-10 max-w-[90rem] mx-auto space-y-10">
+
+            <div class="flex flex-col items-center justify-center text-center gap-6 px-2 md:px-4 mb-16">
+                <div>
+                    <h1 class="font-normal text-3xl text-slate-700 uppercase tracking-[0.2em] leading-none">
+                        {{ __('Service Protocols') }}
+                    </h1>
+                    <p class="text-[11px] font-medium text-slate-400 uppercase tracking-[0.18em] mt-3">
+                        {{ __('Operational history and real-time tracking') }}
+                    </p>
+                </div>                
+
+                <div class="flex shrink-0">
+                    <x-primary-button 
+                        onclick="window.location='{{ route('orders.create') }}'" 
+                        class="!py-4 !px-10 !rounded-full !text-[11px] !font-black !uppercase !tracking-widest shadow-xl shadow-indigo-100 !bg-[#7c4dff] !text-white border-none transition-all hover:scale-105 active:scale-95"
+                    >
+                        {{ __('BOOK NEW SERVICE') }}
+                    </x-primary-button>
+                </div>
+            </div>
             
             <div class="overflow-x-auto rounded-[2.5rem] shadow-2xl border border-slate-100 bg-white">
                 <table class="w-full text-left border-collapse min-w-[1100px]">

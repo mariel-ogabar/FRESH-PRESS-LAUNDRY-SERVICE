@@ -1,25 +1,26 @@
 <x-app-layout>
-    <x-slot name="header">
-        <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 px-2 md:px-4">
-            <div>
-                <h2 class="font-medium text-xl text-slate-800 uppercase tracking-tighter">
-                    {{ __('Staff Registration') }}
-                </h2>
-                <p class="text-[11px] font-medium text-slate-400 uppercase tracking-widest mt-1">
-                    Initialize a new team member and define system access levels.
-                </p>
-            </div>
-            
-            <x-secondary-button onclick="window.location='{{ route('admin.staff.index') }}'" class="!font-medium uppercase tracking-widest !text-[10px] !py-2.5">
-                <svg class="w-3 h-3 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path>
-                </svg>
-                {{ __('BACK TO LIST') }}
-            </x-secondary-button>
-        </div>
-    </x-slot>
 
     <div class="py-8 px-4 md:px-10 max-w-[90rem] mx-auto">
+
+        <div class="flex flex-col items-center justify-center text-center gap-6 px-2 md:px-4 mb-16">
+            <div>
+                <h2 class="font-normal text-3xl text-slate-700 uppercase tracking-widest leading-none">
+                    {{ __('Staff Registration') }}
+                </h2>
+                <p class="text-[11px] font-medium text-slate-400 uppercase tracking-[0.18em] mt-3">
+                    {{ __('Initialize a new team member and define system access levels.') }}
+                </p>
+            </div>                
+
+            <div class="flex shrink-0">
+                <x-primary-button 
+                    onclick="window.location='{{ route('admin.staff.index') }}'" 
+                    class="!py-4 !px-10 !rounded-full !text-[11px] !font-black !uppercase !tracking-widest shadow-xl shadow-indigo-100 !bg-[#7c4dff] !text-white border-none transition-all hover:scale-105 active:scale-95"
+                >
+                    {{ __('BACK TO LIST') }}
+                </x-primary-button>
+            </div>
+        </div>
         <div class="max-w-3xl mx-auto space-y-8">
             
             {{-- Validation Feedback --}}
@@ -38,9 +39,10 @@
             @endif
 
             <div class="bg-white rounded-[2rem] shadow-2xl border border-slate-100 overflow-hidden">
-                {{-- Refined Sub-header --}}
                 <div class="bg-slate-50/50 px-8 py-6 border-b border-slate-100 text-center">
-                    <span class="text-[10px] font-medium text-slate-400 uppercase tracking-[0.25em]">New Credential Profile</span>
+                    <span class="block text-[13px] font-bold text-black uppercase tracking-widest mb-2 ml-1">
+                        New Credential Profile
+                    </span>
                 </div>
 
                 <form action="{{ route('admin.staff.store') }}" method="POST" class="p-8 md:p-12 space-y-12" autocomplete="off">
@@ -93,7 +95,7 @@
                             CANCEL INITIALIZATION
                         </a>
                         
-                        <x-primary-button type="submit" class="!font-medium !bg-[#475569] hover:!bg-[#334155] ring-4 ring-slate-500/5 px-10 py-3.5 !rounded-full shadow-xl transition-all active:scale-95 order-1 sm:order-2 w-full sm:w-auto text-center justify-center">
+                        <x-primary-button type="submit">
                             {{ __('INITIALIZE ACCOUNT') }}
                         </x-primary-button>
                     </div>
