@@ -1,14 +1,22 @@
 <x-app-layout>
     <div x-data="{ 
-        showLookup: {{ auth()->user()->can('create orders') && !request('email') ? 'true' : 'false' }},
+        showLookup: {{ auth()->user()->hasAnyRole(['ADMIN', 'STAFF']) && !request('email') ? 'true' : 'false' }},
         basePrice: 0, loadSize: 0, addonsTotal: 0, serviceName: '', unit: 'kg', selectedAddons: [],
-        colMethod: 'DROP_OFF', retMethod: 'PICKUP', userFound: {{ $foundUser ? 'true' : 'false' }},
+        colMethod: 'DROP_OFF', retMethod: 'PICKUP', 
+        
+        // Logic: User info is fetched if $foundUser exists
+        userFound: {{ $foundUser ? 'true' : 'false' }},
+        
+        // Auto-populate data existence
         hasContact: {{ ($foundUser && $foundUser->contact_no) || (auth()->user()->hasRole('CUSTOMER') && auth()->user()->contact_no) ? 'true' : 'false' }},
         hasAddress: {{ ($foundUser && $foundUser->address) || (auth()->user()->hasRole('CUSTOMER') && auth()->user()->address) ? 'true' : 'false' }},
         
         get needsLogistics() { return this.colMethod === 'STAFF_PICKUP' || this.retMethod === 'DELIVERY'; },
-        get showContactInput() { return (!this.userFound && !{{ auth()->user()->hasRole('CUSTOMER') ? 'true' : 'false' }}) || (this.needsLogistics && !this.hasContact); },
-        get showAddressInput() { return (!this.userFound && !{{ auth()->user()->hasRole('CUSTOMER') ? 'true' : 'false' }}) || (this.needsLogistics && !this.hasAddress); },
+        
+        // Logic: Always show inputs if user is a guest or if info needs updating
+        get showContactInput() { return true; }, 
+        get showAddressInput() { return true; },
+
         updateBasePrice(el) {
             const selected = el.options[el.selectedIndex];
             this.basePrice = selected.dataset.price ? parseFloat(selected.dataset.price) : 0;
@@ -84,30 +92,28 @@
                     {{-- Customer Profile --}}
                     <section class="bg-white rounded-[2.5rem] border border-slate-100 shadow-2xl overflow-hidden">
                         <div class="bg-slate-50/50 px-8 py-5 border-b border-slate-100 text-center">
-                            <span class="text-[10px] font-medium text-slate-400 uppercase tracking-[0.25em]">Customer Profile Logic</span>
+                            <span class="text-[10px] font-medium text-slate-400 uppercase tracking-[0.25em]">Customer Profile</span>
                         </div>
                         <div class="p-10 space-y-8">
+                            {{-- Preserve the Email --}}
+                            <input type="hidden" name="email" value="{{ request('email', auth()->user()->email) }}">
+
                             @hasrole('CUSTOMER')
-                                <input type="hidden" name="contact_no" value="{{ auth()->user()->contact_no }}">
-                                <input type="hidden" name="address" value="{{ auth()->user()->address }}">
                                 <div class="grid grid-cols-1 md:grid-cols-2 gap-6 font-medium uppercase tracking-widest text-[11px]">
                                     <div class="bg-slate-50 p-5 rounded-2xl border border-slate-100">
-                                        <span class="text-[9px] text-slate-400 font-medium block mb-1">Authenticated Identity</span>
+                                        <span class="text-[9px] text-slate-400 font-medium block mb-1">Authenticated Account</span>
                                         <span class="text-slate-800">{{ auth()->user()->name }}</span>
                                     </div>
                                     <div class="bg-slate-50 p-5 rounded-2xl border border-slate-100">
-                                        <span class="text-[9px] text-slate-400 font-medium block mb-1">System Email</span>
+                                        <span class="text-[9px] text-slate-400 font-medium block mb-1">Email Address</span>
                                         <span class="text-slate-800 tracking-normal lowercase">{{ auth()->user()->email }}</span>
                                     </div>
                                 </div>
                             @else
-                                <input type="hidden" name="email" value="{{ request('email') }}">
                                 @if($foundUser)
-                                    <input type="hidden" name="contact_no" value="{{ $foundUser->contact_no }}">
-                                    <input type="hidden" name="address" value="{{ $foundUser->address }}">
                                     <div class="bg-indigo-50 border border-indigo-100 p-6 rounded-[1.5rem] mb-6 flex justify-between items-center shadow-sm">
                                         <div>
-                                            <span class="text-[9px] text-indigo-400 uppercase tracking-widest block font-medium">Customer Identified</span>
+                                            <span class="text-[9px] text-indigo-400 uppercase tracking-widest block font-medium">Customer Profile Fetched</span>
                                             <span class="text-sm font-medium text-indigo-700 uppercase">{{ $foundUser->name }}</span>
                                             <input type="hidden" name="customer_name" value="{{ $foundUser->name }}">
                                         </div>
@@ -119,9 +125,18 @@
                                 @endif
                             @endhasrole
 
+                            {{-- Visible inputs: Auto-filled if data exists, but always editable --}}
                             <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
-                                <div x-show="showContactInput" class="animate-fade-in"><x-form-input label="Contact No." name="contact_no" value="{{ old('contact_no', $foundUser->contact_no ?? '') }}" ::required="showContactInput" class="!rounded-xl shadow-sm font-medium" /></div>
-                                <div x-show="showAddressInput" class="animate-fade-in"><x-form-input label="Service Address" name="address" value="{{ old('address', $foundUser->address ?? '') }}" ::required="showAddressInput" class="!rounded-xl shadow-sm font-medium" /></div>
+                                <div class="animate-fade-in">
+                                    <x-form-input label="Contact No." name="contact_no" 
+                                        value="{{ old('contact_no', $foundUser->contact_no ?? auth()->user()->contact_no ?? '') }}" 
+                                        required class="!rounded-xl shadow-sm font-medium" />
+                                </div>
+                                <div class="animate-fade-in">
+                                    <x-form-input label="Service Address" name="address" 
+                                        value="{{ old('address', $foundUser->address ?? auth()->user()->address ?? '') }}" 
+                                        required class="!rounded-xl shadow-sm font-medium" />
+                                </div>
                             </div>
                         </div>
                     </section>
