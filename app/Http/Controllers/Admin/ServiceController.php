@@ -5,16 +5,31 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\MainService;
 use App\Models\AddOn;
-use App\Http\Requests\Admin\StoreServiceRequest; // Added
-use App\Http\Requests\Admin\StoreAddonRequest;  // Added
+use App\Http\Requests\Admin\StoreServiceRequest;
+use App\Http\Requests\Admin\StoreAddonRequest;  
 use Illuminate\Http\Request;
 
 class ServiceController extends Controller
 {
+    /**
+     * Display the public-facing service list for customers.
+     */
+    public function publicIndex()
+    {
+        $services = \App\Models\MainService::where('is_active', true)->get();
+        $addons = \App\Models\AddOn::where('is_active', true)->get();
+        
+        return view('services.index', compact('services', 'addons'));
+    }
+
+    /**
+     * Display the management list for Admin/Staff.
+     */
     public function index()
     {
-        $services = MainService::all();
-        $addons = \App\Models\AddOn::all();        
+        $services = \App\Models\MainService::all();
+        $addons = \App\Models\AddOn::all();
+        
         return view('admin.services.index', compact('services', 'addons'));
     }
 
@@ -23,7 +38,6 @@ class ServiceController extends Controller
      */
     public function storeService(StoreServiceRequest $request)
     {
-        // Using validated() prevents injection of 'is_active' or 'deleted_at'
         MainService::create($request->validated());
 
         return back()->with('success', 'New service added to the menu.');
@@ -54,7 +68,6 @@ class ServiceController extends Controller
     {
         $addon = AddOn::findOrFail($id);
         
-        // Babaliktarin ang current status
         $addon->update([
             'is_active' => !$addon->is_active
         ]);
