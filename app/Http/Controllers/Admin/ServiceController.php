@@ -11,9 +11,7 @@ use Illuminate\Http\Request;
 
 class ServiceController extends Controller
 {
-    /**
-     * Display the public-facing service list for customers.
-     */
+    // Display the public-facing service list for customers.
     public function publicIndex()
     {
         $services = \App\Models\MainService::where('is_active', true)->get();
@@ -22,9 +20,7 @@ class ServiceController extends Controller
         return view('services.index', compact('services', 'addons'));
     }
 
-    /**
-     * Display the management list for Admin/Staff.
-     */
+    // Display the management list for Admin/Staff.
     public function index()
     {
         $services = \App\Models\MainService::all();
@@ -33,9 +29,8 @@ class ServiceController extends Controller
         return view('admin.services.index', compact('services', 'addons'));
     }
 
-    /**
-     * Store Main Service securely
-     */
+
+     // Create a new main laundry service in the database
     public function storeService(StoreServiceRequest $request)
     {
         MainService::create($request->validated());
@@ -43,9 +38,8 @@ class ServiceController extends Controller
         return back()->with('success', 'New service added to the menu.');
     }
 
-    /**
-     * Store Add-on securely
-     */
+    
+    // Create a new service add-on in the database
     public function storeAddon(StoreAddonRequest $request)
     {
         AddOn::create($request->validated());
@@ -53,6 +47,7 @@ class ServiceController extends Controller
         return back()->with('success', 'New add-on added.');
     }
 
+    // Enable or disable a service without deleting it from the system
     public function toggleService($id)
     {
         $service = MainService::findOrFail($id);
@@ -61,9 +56,8 @@ class ServiceController extends Controller
         return back()->with('success', 'Service status updated.');
     }
 
-    /**
-     * Toggle Add-on status (Active/Inactive)
-     */
+
+    //Enable or disable an add-on's availability
     public function toggleAddon($id)
     {
         $addon = AddOn::findOrFail($id);
@@ -75,21 +69,21 @@ class ServiceController extends Controller
         return back()->with('success', 'Add-on availability updated.');
     }
 
+    // Soft delete a service to archive it from current operations
     public function destroyService($id)
     {
         MainService::findOrFail($id)->delete(); 
         return back()->with('success', 'Service archived.');
     }
 
+    // Restore a previously archived service
     public function restoreService($id)
     {
         MainService::withTrashed()->findOrFail($id)->restore();
         return back()->with('success', 'Service restored.');
     }
 
-    /**
-     * Update Service securely
-     */
+    // Update main laundry service details
     public function updateService(StoreServiceRequest $request, $id)
     {
         $service = MainService::findOrFail($id);
@@ -98,9 +92,7 @@ class ServiceController extends Controller
         return back()->with('success', 'Service updated successfully.');
     }
 
-    /**
-     * Update Add-on securely
-     */
+    // Update add-on details    
     public function updateAddon(StoreAddonRequest $request, $id)
     {
         $addon = AddOn::findOrFail($id);
@@ -109,6 +101,7 @@ class ServiceController extends Controller
         return back()->with('success', 'Add-on updated successfully.');
     }
 
+    // Permanently delete an add-on from the system
     public function destroyAddon($id)
     {
         $addon = AddOn::findOrFail($id);

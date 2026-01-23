@@ -19,7 +19,6 @@ Route::get('/', function () {
 });
 
 // 1. PUBLIC SERVICE VIEW: No middleware, strictly for viewing.
-// Use 'publicIndex' to separate viewing logic from management logic.
 Route::get('/services', [ServiceController::class, 'publicIndex'])->name('services.index');
 
 /**
@@ -89,11 +88,12 @@ Route::middleware('auth')->group(function () {
         });
     });
 
+    Route::patch('/orders/{id}/payment', [OrderController::class, 'updatePayment'])
+    ->middleware('auth', 'role_or_permission:ADMIN|process payments')
+    ->name('orders.updatePayment');
+
     // --- Strictly ADMIN-ONLY Actions ---
     Route::middleware('role:ADMIN')->group(function () {
-        Route::patch('/orders/{id}/payment', [OrderController::class, 'updatePayment'])
-            ->middleware('permission:process payments')
-            ->name('orders.updatePayment');
             
         Route::delete('/orders/{id}', [OrderController::class, 'destroy'])->name('orders.destroy');
         

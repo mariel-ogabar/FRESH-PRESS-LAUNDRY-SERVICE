@@ -7,13 +7,15 @@ use App\Models\User;
 
 class OrderPolicy
 {
+    /**
+     * Determine whether the user can cancel the order.
+     */
     public function cancel(User $user, Order $order): bool
     {
         if (!$order->isCancellable()) {
             return false;
         }
 
-        // Gamitin ang Spatie hasRole/hasPermissionTo
         if ($user->hasRole('ADMIN')) {
             return true;
         }
@@ -26,12 +28,10 @@ class OrderPolicy
     }
 
     /**
-     * Dito ang naging error.
-     * Palitan ang $user->role ng Spatie hasAnyRole method.
+     * Determine whether the user can update the status of the order.
      */
     public function updateStatus(User $user): bool
     {
-        // Spatie method para i-check kung Admin o Staff ang user
         return $user->hasAnyRole(['ADMIN', 'STAFF']);
     }
 }

@@ -4,7 +4,6 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Model;
 
 class Collection extends Model {
-    
     const STATUS_RECEIVED = 'RECEIVED';
     const STATUS_PENDING = 'PENDING';
 

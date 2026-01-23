@@ -10,6 +10,7 @@ use Illuminate\Support\Facades\Hash;
 
 class OrderProcessingService
 {
+    // Calculate total price based on service, load size, and addons
     public function calculateTotal(int $serviceId, float $loadSize, ?array $addonIds): float
     {
         $mainService = MainService::findOrFail($serviceId);
@@ -19,6 +20,7 @@ class OrderProcessingService
         return $baseTotal + $addonsTotal;
     }
 
+    // Attach services and addons to the order
     public function attachServicesAndAddons($order, array $validated, float $totalPrice): void
     {
         $addonPricesSum = isset($validated['addons'])
@@ -43,6 +45,7 @@ class OrderProcessingService
         }
     }
 
+    // Get existing customer by email or create a new one
     public function getOrCreateCustomer(array $data)
     {
         $email = $data['email'] ?? null;

@@ -13,19 +13,21 @@ use Illuminate\Support\Facades\Auth;
 
 class StaffController extends Controller
 {
+    // Display a list of all staff members (ADMIN and STAFF roles)
     public function index()
     {
-        // Get only staff and admins, excluding customers
         $staffMembers = User::role(['ADMIN', 'STAFF'])->get();
         return view('admin.staff.index', compact('staffMembers'));
     }
 
+    // Show the form for creating a new staff member
     public function create()
     {
         $roles = Role::whereIn('name', ['ADMIN', 'STAFF'])->get();
         return view('admin.staff.create', compact('roles'));
     }
 
+    // Store a newly created staff member in the database
     public function store(Request $request)
     {
         $request->validate([
@@ -47,17 +49,17 @@ class StaffController extends Controller
             ->with('success', 'Staff account created successfully.');
     }
 
+    //  Show the form for editing an existing staff member
     public function edit(User $staff)
     {
-        // Fetch roles excluding customers for the dropdown
         $roles = Role::where('name', '!=', 'CUSTOMER')->get();
         
-        // Fetch all available permissions for the checkbox grid
         $permissions = Permission::all();
 
         return view('admin.staff.edit', compact('staff', 'roles', 'permissions'));
     }
 
+    // Update the specified staff member in the database
     public function update(Request $request, User $staff)
     {
         $request->validate([
@@ -67,23 +69,19 @@ class StaffController extends Controller
             'role' => 'required|exists:roles,name'
         ]);
 
-        // 1. Update basic account info
         $staff->update($request->only('name', 'email'));
 
-        // 2. Sync the Role
         $staff->syncRoles([$request->role]);
 
-        // 3. Sync Direct Permissions (Manual Overrides)
         $staff->syncPermissions($request->permissions ?? []);
 
-        // 4. CRITICAL: Clear Spatie Cache so changes apply immediately
         app()[\Spatie\Permission\PermissionRegistrar::class]->forgetCachedPermissions();
 
-        // 5. REDIRECT to Index (as requested) with success message
         return redirect()->route('admin.staff.index')
             ->with('success', 'Staff settings and permissions updated successfully.');
     }
 
+    // Remove the specified staff member from the database
     public function destroy(User $staff)
     {
         // Prevent self-deletion

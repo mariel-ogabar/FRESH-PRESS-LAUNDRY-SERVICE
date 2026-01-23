@@ -11,6 +11,7 @@ use App\Models\Delivery;
 
 class UpdateStatusRequest extends FormRequest
 {
+    // Determine if the user is authorized to make this request
     public function authorize(): bool
     {
         // This allows both ADMIN and STAFF to pass
@@ -18,6 +19,7 @@ class UpdateStatusRequest extends FormRequest
             \Illuminate\Support\Facades\Auth::user()->hasAnyRole(['ADMIN', 'STAFF']);
     }
     
+    // Get the validation rules that apply to the request
     public function rules(): array
     {
         return [

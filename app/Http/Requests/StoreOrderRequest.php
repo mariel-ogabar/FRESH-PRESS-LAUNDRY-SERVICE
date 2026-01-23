@@ -7,11 +7,13 @@ use Illuminate\Support\Facades\Auth;
 
 class StoreOrderRequest extends FormRequest
 {
+    // Determine if the user is authorized to make this request
     public function authorize(): bool
     {
         return Auth::check(); 
     }
 
+    // Get the validation rules that apply to the request
     public function rules(): array
     {
         /** @var \App\Models\User $user */
@@ -42,6 +44,7 @@ class StoreOrderRequest extends FormRequest
         return $rules;
     }
 
+    // Custom messages for validation errors
     public function messages(): array
     {
         return [

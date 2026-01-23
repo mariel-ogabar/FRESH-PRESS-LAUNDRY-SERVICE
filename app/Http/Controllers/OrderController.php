@@ -108,6 +108,7 @@ class OrderController extends Controller
         });
     }
 
+    // Resolve Customer based on Auth User and Input
     private function resolveCustomer($authUser, $validated, $email)
     {
         if ($authUser->hasAnyRole(['ADMIN', 'STAFF']) || $authUser->can('create orders')) {
@@ -243,7 +244,7 @@ class OrderController extends Controller
             return response()->json(['message' => 'Permission Denied'], 403);
         }
 
-        $order = Order::findOrFail($id);
+        $order = Order::findOrFail($id); 
         $order->delivery->update([
             'scheduled_delivery_date' => $request->scheduled_date
         ]);
@@ -267,6 +268,7 @@ class OrderController extends Controller
         });
     }
 
+    // Initialize Order Details: Laundry Status, Collection, Delivery, Payment
     private function initializeOrderDetails($order, $request)
     {
         $order->laundryStatus()->create(['current_status' => 'PENDING']);
