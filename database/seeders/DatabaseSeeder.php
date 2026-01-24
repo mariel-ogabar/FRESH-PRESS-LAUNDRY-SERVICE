@@ -54,5 +54,9 @@ class DatabaseSeeder extends Seeder
         AddOn::create(['addon_name' => 'Express Service', 'addon_price' => 250.00, 'is_active' => true]);
         AddOn::create(['addon_name' => 'Delicate Care', 'addon_price' => 300.00, 'is_active' => true]);
         AddOn::create(['addon_name' => 'Ironing Service', 'addon_price' => 120.00, 'is_active' => true]);
+
+        $this->call([
+            OrderLifecycleSeeder::class,
+        ]);
     }
 }

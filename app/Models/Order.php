@@ -22,12 +22,10 @@ class Order extends Model {
      */
     protected static function booted()
     {
-        // You must include 'Builder $builder' inside the function( )
         static::addGlobalScope('own_orders', function (Builder $builder) {
             if (Auth::check()) {
                 $user = Auth::user();
                 if (!$user->hasAnyRole(['ADMIN', 'STAFF'])) {
-                    // Now $builder is recognized
                     $builder->where('orders.user_id', $user->id);
                 }
             }
