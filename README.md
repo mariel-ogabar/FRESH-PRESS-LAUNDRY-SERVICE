@@ -6,15 +6,14 @@ A laundry operations platform built with the TALL stack (Tailwind CSS, Alpine.js
 
 ## 📑 Table of Contents
 
-* [Project Overview](https://www.google.com/search?q=%23project-overview)
-* [Course Information](https://www.google.com/search?q=%23course-information)
-* [Project Features](https://www.google.com/search?q=%23project-features)
-* [Quick Start](https://www.google.com/search?q=%23quick-start)
-* [Demo Credentials](https://www.google.com/search?q=%23demo-credentials)
-* [Database Architecture](https://www.google.com/search?q=%23database-architecture)
-* [API & Route structure](https://www.google.com/search?q=%23api--route-structure)
-* [Code Organization](https://www.google.com/search?q=%23code-organization)
-
+* [📋 Project Overview](#-project-overview)
+* [🎓 Course Information](#-course-information)
+* [✨ Project Features](#-project-features)
+* [⚡ Quick Start](#-quick-start)
+* [🔐 Demo Credentials](#-demo-credentials)
+* [📂 Database Architecture](#-database-architecture)
+* [🛣️ API & Route structure](#-api--route-structure)
+* [🏗️ Code Organization](#-code-organization)
 ---
 
 ## 📋 Project Overview
