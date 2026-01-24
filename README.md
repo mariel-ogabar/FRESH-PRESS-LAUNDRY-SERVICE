@@ -136,7 +136,7 @@ php artisan key:generate
 Open the `.env` file in your project root and ensure the credentials match your server:
 
 ```env
-DB_CONNECTION=mysql
+DB_CONNECTION=mysql  #use 'mysql' for xampp and sqlite for laragon connection
 DB_HOST=127.0.0.1
 DB_PORT=3306
 DB_DATABASE=freshpress_db
